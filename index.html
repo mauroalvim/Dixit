@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dixit Score Counter</title>
     
+    <!-- BIBLIOTECA PARA O EFEITO DE CONFETE (PAPELZINHO VOANDO) -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
@@ -86,7 +87,7 @@
             font-size: 16px;
             background-color: #fff;
             transition: border-color 0.2s;
-            text-transform: uppercase; /* Força maiúscula na visualização da digitação */
+            text-transform: uppercase; 
         }
         
         .form-group input:focus, .form-group select:focus {
@@ -145,17 +146,20 @@
             font-size: 16px;
         }
 
-        /* ESTRUTURA PARA EVITAR QUEBRA DE LINHA */
+        /* AJUSTES ANTI-VIBRAÇÃO E ANTI-QUEBRA (RESPONSIVIDADE) */
         .narrator-badge, .winner-badge {
-            padding: 20px 10px; /* Reduzi o padding lateral para caber mais texto */
-            font-size: 28px; /* Ajuste para caber nomes na tela mobile */
+            width: 100%;
+            box-sizing: border-box;
+            padding: 15px 10px; 
+            /* A mágica acontece aqui: A fonte diminui se a tela for pequena */
+            font-size: clamp(16px, 7.5vw, 32px); 
             font-weight: 900;
             text-align: center;
             border-radius: 16px;
             margin: 20px 0;
             box-shadow: 0 8px 20px rgba(0,0,0,0.1);
             
-            /* REGRAS ANTI-QUEBRA DE LINHA */
+            /* Trava a linha */
             white-space: nowrap; 
             overflow: hidden;
             text-overflow: ellipsis;
@@ -171,14 +175,14 @@
             background-color: #fffbeb;
             color: #b45309;
             padding: 12px;
-            font-size: 18px;
+            /* Responsivo também para o nome menor */
+            font-size: clamp(14px, 5vw, 18px); 
             font-weight: 800;
             text-align: center;
             border-radius: 10px;
             margin-bottom: 24px;
             border: 2px dashed #fcd34d;
             
-            /* REGRAS ANTI-QUEBRA DE LINHA */
             white-space: nowrap; 
             overflow: hidden;
             text-overflow: ellipsis;
@@ -207,6 +211,7 @@
 
 <h1>Dixit Score Counter 🎲</h1>
 
+<!-- TELA 1: CADASTRO -->
 <div id="registrationCard" class="card">
     <h2>Configuração</h2>
     
@@ -217,7 +222,7 @@
 
     <h2>Jogadores</h2>
     <div class="form-group">
-        <input type="text" id="playerName" placeholder="EX: MAURO, GABRIEL, MICHELE...">
+        <input type="text" id="playerName" placeholder="EX: MAURO, GABRIEL...">
     </div>
     
     <div class="btn-group">
@@ -232,6 +237,7 @@
     <button class="start-btn" onclick="iniciarJogo()">Iniciar Partida</button>
 </div>
 
+<!-- TELA 2: ANÚNCIO DO NARRADOR -->
 <div id="roundIntroCard" class="card" style="display:none;">
     <h2 style="text-align: center; border: none;">Rodada <span id="roundNumberDisplay"></span></h2>
     <p style="text-align: center; font-size: 16px; color: var(--text-muted); margin-bottom: 5px;">O narrador da vez é:</p>
@@ -241,6 +247,7 @@
     <button class="start-btn" onclick="iniciarVotacao()">Iniciar Votação</button>
 </div>
 
+<!-- TELA 3: PAINEL DE VOTAÇÃO -->
 <div id="votingCard" class="card" style="display:none;">
     <h2 style="margin-bottom: 20px;">Votação</h2>
     
@@ -264,15 +271,18 @@
         <ul id="voteLogList"></ul>
     </div>
     
+    <!-- ESCONDIDO POR PADRÃO -->
     <button id="endGameBtn" style="display:none;" onclick="finalizarRodada()">Encerrar Rodada</button>
 </div>
 
+<!-- TELA 4: PLACAR DA RODADA -->
 <div id="roundResultsCard" class="card" style="display:none;">
     <h2>Placar da Rodada</h2>
     <ul id="currentScoresList" style="margin-top: 20px; margin-bottom: 24px;"></ul>
     <button class="start-btn" onclick="proximaRodada()">Próxima Rodada</button>
 </div>
 
+<!-- TELA 5: TELA FINAL -->
 <div id="finalResultsCard" class="card" style="display:none;">
     <h2 style="text-align: center; border: none; font-size: 24px;">Fim de Jogo!</h2>
     
@@ -295,7 +305,6 @@
 
     function adicionarJogador() {
         const nameInput = document.getElementById('playerName');
-        // Pega o nome, remove espaços nas bordas e FORÇA MAIÚSCULO
         const name = nameInput.value.trim().toUpperCase(); 
         
         if (name && !players[name]) {
@@ -324,7 +333,6 @@
 
         recognition.onresult = function(event) {
             let text = event.results[0][0].transcript;
-            // Remove pontuação, espaços e FORÇA MAIÚSCULO
             text = text.replace(/[.?!]/g, "").trim().toUpperCase(); 
             if (text) {
                 document.getElementById('playerName').value = text;
@@ -360,7 +368,7 @@
     function editarNome(oldName) {
         let newName = prompt(`Digite o novo nome para ${oldName}:`, oldName);
         if (newName && newName.trim() !== "") {
-            const cleanNewName = newName.trim().toUpperCase(); // Força maiúsculo na edição
+            const cleanNewName = newName.trim().toUpperCase();
             
             if (cleanNewName !== oldName && players[cleanNewName]) {
                 alert("Já existe um jogador com esse nome!");
@@ -616,8 +624,42 @@
         mostrarTelaNarrador();
     }
 
-    // DISPARA O CONFETE E MOSTRA O RESULTADO
-    function dispararConfete() {
+    // SINTETIZADOR DE SOM NATIVO E CONFETES
+    function tocarSomDeFesta() {
+        // Tenta iniciar o contexto de áudio
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        
+        const ctx = new AudioContext();
+        const now = ctx.currentTime;
+        
+        // Oscilador para fazer o som de uma corneta de festa (Glissando rápido)
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.type = 'sawtooth';
+        
+        // Frequência começando aguda e descendo
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.5);
+        
+        // Volume
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.3, now + 0.05); // Fade in rápido
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5); // Fade out
+        
+        osc.start(now);
+        osc.stop(now + 0.5);
+    }
+
+    function dispararConfeteESom() {
+        // Dispara o som
+        tocarSomDeFesta();
+        
+        // Dispara o visual
         if (typeof confetti === "function") {
             var duration = 3 * 1000;
             var animationEnd = Date.now() + duration;
@@ -645,11 +687,10 @@
         
         const winnerDisplay = document.getElementById('winnerDisplay');
         
-        // Estrutura do Troféu em cima do Nome para evitar quebra lateral
         let htmlConteudo = `<div class="trophy-icon">🏆</div>`;
         
         if (winners.length > 1) {
-            htmlConteudo += `<div>EMPATE!</div><div style="font-size: 20px">${winners.join(" & ")}</div>`;
+            htmlConteudo += `<div style="font-size: clamp(14px, 5vw, 24px);">EMPATE!</div><div style="font-size: clamp(14px, 5vw, 24px);">${winners.join(" & ")}</div>`;
         } else {
             htmlConteudo += `<div>${winners[0]} VENCEU!</div>`;
         }
@@ -666,8 +707,8 @@
 
         document.getElementById('finalResultsCard').style.display = "block";
         
-        // Ativa o efeito do papelzinho voando!
-        dispararConfete();
+        // Ativa os efeitos de vitória 🎉🎶
+        dispararConfeteESom();
     }
 </script>
 
