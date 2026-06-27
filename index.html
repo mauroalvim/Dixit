@@ -3,108 +3,547 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dixit Score Counter v6</title>
+    <title>Dixit Score Counter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <style>
-        :root { --primary: #4361ee; --bg: #f3f4f6; --card-bg: #ffffff; --text-main: #1f2937; }
-        body { font-family: sans-serif; padding: 15px; background-color: var(--bg); color: var(--text-main); max-width: 600px; margin: auto; }
-        .card { background: var(--card-bg); padding: 24px; margin-bottom: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .config-row { display: flex; align-items: center; justify-content: space-between; background-color: #f8fafc; padding: 12px 16px; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 24px; }
-        .config-row input { width: 70px; text-align: center; font-size: 18px; font-weight: bold; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; color: var(--primary); }
-        .form-group { margin-bottom: 16px; }
-        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 16px; text-transform: uppercase; }
-        button { width: 100%; padding: 14px; font-size: 16px; border: none; border-radius: 12px; background-color: var(--primary); color: white; font-weight: 700; cursor: pointer; margin-top: 8px; }
-        button:disabled { background-color: #d1d5db !important; cursor: not-allowed; }
-        .edit-btn { background: #e2e8f0; color: var(--text-main); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
-        
-        /* Ajuste fino para nomes longos */
-        .fit-container { white-space: nowrap; display: inline-block; transform-origin: center; transition: transform 0.1s; }
-        .narrator-badge { background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #fff; padding: 20px 10px; font-size: 32px; font-weight: 900; text-align: center; border-radius: 16px; margin: 20px 0; border: 3px solid #e0a800; overflow: hidden; }
-        .winner-badge { background: linear-gradient(135deg, #10b981, #34d399); color: #fff; padding: 20px 10px; font-size: 28px; font-weight: 900; text-align: center; border-radius: 16px; margin: 20px 0; overflow: hidden; }
-        .version-footer { text-align: center; font-size: 12px; color: #aaa; margin-top: 20px; font-weight: bold; }
+        :root {
+            --primary: #6c63ff;
+            --primary-dark: #5a52e0;
+            --gold: #f5a623;
+            --gold-dark: #e09010;
+            --green: #00c896;
+            --green-dark: #00a87e;
+            --danger: #ff5c6a;
+            --bg: #eef0f7;
+            --card: #ffffff;
+            --text: #1a1d2e;
+            --muted: #8b90a7;
+            --border: #e2e6f0;
+            --shadow-sm: 0 2px 8px rgba(108,99,255,0.07);
+            --shadow-md: 0 8px 28px rgba(108,99,255,0.13);
+            --shadow-lg: 0 16px 48px rgba(108,99,255,0.18);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px 16px 40px;
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        /* ── HEADER ── */
+        .app-header {
+            text-align: center;
+            margin-bottom: 28px;
+            padding-top: 8px;
+        }
+
+        .app-header h1 {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--text);
+            letter-spacing: -0.5px;
+        }
+
+        .app-header h1 span {
+            color: var(--primary);
+        }
+
+        .version-tag {
+            display: inline-block;
+            margin-top: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--muted);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        /* ── CARD ── */
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 28px 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        /* ── CONFIG ROW ── */
+        .config-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg);
+            padding: 14px 18px;
+            border-radius: 14px;
+            margin-bottom: 24px;
+        }
+
+        .config-row label {
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text);
+        }
+
+        .config-row input {
+            width: 72px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 800;
+            padding: 8px;
+            border-radius: 10px;
+            border: 2px solid var(--border);
+            color: var(--primary);
+            font-family: 'Nunito', sans-serif;
+            background: white;
+            transition: border-color 0.2s;
+        }
+
+        .config-row input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* ── FORM ── */
+        .form-group { margin-bottom: 14px; }
+
+        .form-group label {
+            display: block;
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+        }
+
+        .form-group input[type="text"],
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Nunito', sans-serif;
+            background: white;
+            color: var(--text);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            appearance: none;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(108,99,255,0.1);
+        }
+
+        /* ── BUTTONS ── */
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 800;
+            font-family: 'Nunito', sans-serif;
+            border: none;
+            border-radius: 14px;
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+            box-shadow: 0 4px 14px rgba(108,99,255,0.3);
+            letter-spacing: 0.3px;
+        }
+
+        button:hover { box-shadow: 0 6px 20px rgba(108,99,255,0.4); }
+        button:active { transform: scale(0.97); box-shadow: none; }
+        button:disabled {
+            background: #d1d5db !important;
+            color: #9ca3af !important;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 4px; }
+        .btn-group button { margin-top: 0; }
+
+        .btn-voice {
+            background: var(--green);
+            box-shadow: 0 4px 14px rgba(0,200,150,0.3);
+        }
+        .btn-voice:hover { box-shadow: 0 6px 20px rgba(0,200,150,0.4); }
+
+        .btn-dark {
+            background: var(--text);
+            box-shadow: 0 4px 14px rgba(26,29,46,0.25);
+            margin-top: 24px;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            box-shadow: 0 4px 14px rgba(255,92,106,0.3);
+            margin-top: 20px;
+            font-size: 17px;
+        }
+
+        /* ── PLAYER LIST ── */
+        .player-list {
+            list-style: none;
+            margin-top: 20px;
+        }
+
+        .player-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 13px 16px;
+            background: var(--bg);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            font-weight: 700;
+            font-size: 15px;
+            border: 1.5px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .player-list li:hover { border-color: var(--primary); }
+
+        .edit-btn {
+            width: 36px !important;
+            height: 36px !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            font-size: 15px;
+            border-radius: 10px !important;
+            background: white !important;
+            color: var(--text) !important;
+            box-shadow: var(--shadow-sm) !important;
+            flex-shrink: 0;
+        }
+
+        /* ── ROUND INTRO ── */
+        .round-label {
+            text-align: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .round-number {
+            text-align: center;
+            font-size: 36px;
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 20px;
+        }
+
+        .narrator-label {
+            text-align: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        /* ── NARRADOR BADGE (sem truncar, sem hífen — JS redimensiona) ── */
+        .narrator-badge {
+            width: 100%;
+            padding: 18px 16px;
+            background: linear-gradient(135deg, var(--gold), #fbbf24);
+            border-radius: 20px;
+            box-shadow: 0 8px 28px rgba(245,166,35,0.35);
+            text-align: center;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 24px;
+            /* Nunca quebra nem trunca — JS encolhe a fonte */
+            white-space: nowrap;
+            overflow: hidden;
+            font-size: 38px; /* valor inicial, JS vai reduzir se necessário */
+            line-height: 1.15;
+            letter-spacing: -0.3px;
+        }
+
+        .narrator-small-badge {
+            background: #fffbeb;
+            border: 2px dashed #fcd34d;
+            border-radius: 14px;
+            padding: 13px 16px;
+            text-align: center;
+            font-weight: 800;
+            color: #b45309;
+            margin-bottom: 22px;
+            white-space: nowrap;
+            overflow: hidden;
+            font-size: 17px;
+            line-height: 1.3;
+        }
+
+        /* ── VOTE LOG ── */
+        .vote-log { margin-top: 24px; }
+
+        .vote-log h3 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .vote-log ul { list-style: none; }
+
+        .vote-log li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 11px 14px;
+            background: var(--bg);
+            border-radius: 10px;
+            margin-bottom: 7px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* ── SCORE LISTS ── */
+        .score-list { list-style: none; margin-bottom: 24px; }
+
+        .score-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            background: var(--bg);
+            border-radius: 14px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .score-list li:first-child {
+            background: linear-gradient(135deg, #fef9ec, #fef3d0);
+            border: 2px solid #fcd34d;
+        }
+
+        .score-pts {
+            color: var(--primary);
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        /* ── WINNER ── */
+        .winner-card {
+            background: linear-gradient(135deg, var(--green), #34d399);
+            border-radius: 20px;
+            padding: 28px 20px;
+            text-align: center;
+            box-shadow: 0 10px 32px rgba(0,200,150,0.35);
+            margin-bottom: 24px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .trophy { font-size: 52px; display: block; margin-bottom: 10px; }
+
+        .winner-name {
+            font-size: clamp(18px, 7vw, 34px);
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: -0.3px;
+            line-height: 1.2;
+        }
+
+        .winner-sub {
+            font-size: 13px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.75);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 4px;
+        }
+
+        /* ── DIVIDER ── */
+        .divider {
+            height: 2px;
+            background: var(--border);
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        /* ── SECTION LABEL ── */
+        .section-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 14px;
+        }
     </style>
 </head>
 <body>
 
-<h1>Dixit Score Counter 🎲</h1>
+<header class="app-header">
+    <h1>Dixit <span>Score</span> 🎲</h1>
+    <span class="version-tag">v8</span>
+</header>
 
+<!-- TELA 1: CADASTRO -->
 <div id="registrationCard" class="card">
-    <h2>Configuração</h2>
+    <p class="card-title">Configuração</p>
+
     <div class="config-row">
-        <label>Meta de Pontos:</label>
-        <input type="number" id="targetScore" value="30">
+        <label for="targetScore">Meta de pontos</label>
+        <input type="number" id="targetScore" value="30" min="1">
     </div>
-    <h2>Jogadores</h2>
-    <div class="form-group"><input type="text" id="playerName" placeholder="NOME DO JOGADOR"></div>
-    <div style="display:flex; gap:10px;">
+
+    <p class="card-title" style="margin-top: 4px;">Jogadores</p>
+
+    <div class="form-group">
+        <label>Nome do jogador</label>
+        <input type="text" id="playerName" placeholder="EX: MAURO, GABRIEL...">
+    </div>
+
+    <div class="btn-group">
         <button onclick="adicionarJogador()">Adicionar</button>
-        <button onclick="iniciarVoz()" style="background-color:#10b981;">🎤 Falar</button>
+        <button id="voiceBtn" class="btn-voice" onclick="iniciarVoz()">🎤 Falar</button>
     </div>
-    <ul id="playerList" style="margin-top:20px;"></ul>
-    <button onclick="iniciarJogo()" style="background-color:black; margin-top:24px;">Iniciar Partida</button>
+
+    <ul id="playerList" class="player-list"></ul>
+
+    <button class="btn-dark" onclick="iniciarJogo()">Iniciar Partida ▶</button>
 </div>
 
+<!-- TELA 2: NARRADOR -->
 <div id="roundIntroCard" class="card" style="display:none;">
-    <h2 style="text-align: center;">Rodada <span id="roundNumberDisplay"></span></h2>
-    <div class="narrator-badge"><div id="storytellerText" class="fit-container"></div></div>
-    <button onclick="iniciarVotacao()">Iniciar Votação</button>
+    <p class="round-label">Rodada</p>
+    <p class="round-number" id="roundNumberDisplay"></p>
+    <p class="narrator-label">O narrador da vez é</p>
+    <div id="storytellerHighlight" class="narrator-badge"></div>
+    <button class="btn-dark" onclick="iniciarVotacao()">Iniciar Votação</button>
 </div>
 
+<!-- TELA 3: VOTAÇÃO -->
 <div id="votingCard" class="card" style="display:none;">
-    <h2 style="margin-bottom: 20px;">Votação</h2>
-    <div style="background:#fffbeb; padding:10px; border-radius:10px; text-align:center; font-weight:bold; margin-bottom:20px;">
-        NARRADOR: <span id="storytellerDisplay"></span>
+    <p class="card-title">Votação</p>
+    <div id="storytellerSmall" class="narrator-small-badge"></div>
+
+    <div class="form-group">
+        <label>Quem está votando?</label>
+        <select id="voterSelect" onchange="atualizarOpcoesCartas()"></select>
     </div>
-    <div class="form-group"><label>Quem vota?</label><select id="voterSelect" onchange="atualizarOpcoesCartas()"></select></div>
-    <div class="form-group"><label>Vota em quem?</label><select id="cardOwnerSelect"></select></div>
+    <div class="form-group">
+        <label>Escolheu a carta de quem?</label>
+        <select id="cardOwnerSelect"></select>
+    </div>
+
     <button id="registerVoteBtn" onclick="registrarVoto()">Registrar Voto</button>
-    <ul id="voteLogList" style="margin-top:20px;"></ul>
-    <button id="endGameBtn" style="display:none; background-color:red;" onclick="finalizarRodada()">Encerrar Rodada</button>
+
+    <div class="vote-log" id="voteLogContainer">
+        <h3>Registros</h3>
+        <ul id="voteLogList"></ul>
+    </div>
+
+    <button id="endGameBtn" class="btn-danger" style="display:none;" onclick="finalizarRodada()">Encerrar Rodada ✓</button>
 </div>
 
+<!-- TELA 4: PLACAR DA RODADA -->
 <div id="roundResultsCard" class="card" style="display:none;">
-    <h2>Placar da Rodada</h2>
-    <ul id="currentScoresList" style="margin-top:20px; margin-bottom:20px;"></ul>
-    <button onclick="proximaRodada()">Próxima Rodada</button>
+    <p class="card-title">Placar da Rodada</p>
+    <ul id="currentScoresList" class="score-list"></ul>
+    <button class="btn-dark" onclick="proximaRodada()">Próxima Rodada ▶</button>
 </div>
 
+<!-- TELA 5: FIM DE JOGO -->
 <div id="finalResultsCard" class="card" style="display:none;">
-    <div id="winnerDisplay" class="winner-badge"></div>
-    <ul id="finalScoresList" style="margin-bottom:20px;"></ul>
-    <button onclick="location.reload()">Jogar Novamente</button>
+    <p class="card-title" style="text-align:center; border:none; font-size:22px;">Fim de Jogo! 🎉</p>
+    <div id="winnerDisplay" class="winner-card"></div>
+    <p class="section-label">Placar Final</p>
+    <ul id="finalScoresList" class="score-list"></ul>
+    <button class="btn-dark" onclick="location.reload()">Jogar Novamente</button>
 </div>
-
-<div class="version-footer">Versão 6.0</div>
 
 <script>
-    let players = {}, playerNames = [], playOrder = [], storytellerIndex = 0, storyteller = "", votes = {}, roundNumber = 1, winningScoreTarget = 30;
+    let players = {};
+    let playerNames = [];
+    let playOrder = [];
+    let storytellerIndex = 0;
+    let storyteller = "";
+    let votes = {};
+    let roundNumber = 1;
+    let winningScoreTarget = 30;
 
-    // Função para ajustar o nome sem quebrar a linha
-    function ajustarNome(id) {
-        const container = document.getElementById(id);
-        if (!container) return;
-        container.style.transform = 'scale(1)';
-        const parentWidth = container.parentElement.clientWidth - 20;
-        if (container.scrollWidth > parentWidth) {
-            container.style.transform = `scale(${parentWidth / container.scrollWidth})`;
-        }
+    /* Encolhe a fonte até o texto caber, sem quebrar nem truncar */
+    function fitText(el, maxPx, minPx) {
+        el.style.fontSize = maxPx + 'px';
+        // Aguarda o layout renderizar antes de medir
+        requestAnimationFrame(() => {
+            while (el.scrollWidth > el.clientWidth && parseFloat(el.style.fontSize) > minPx) {
+                el.style.fontSize = (parseFloat(el.style.fontSize) - 1) + 'px';
+            }
+        });
     }
 
     function adicionarJogador() {
-        const input = document.getElementById('playerName');
-        const name = input.value.trim().toUpperCase();
+        const nameInput = document.getElementById('playerName');
+        const name = nameInput.value.trim().toUpperCase();
         if (name && !players[name]) {
-            players[name] = 0; playerNames.push(name); input.value = "";
+            players[name] = 0;
+            playerNames.push(name);
+            nameInput.value = "";
             atualizarListaJogadores();
         }
     }
 
     function iniciarVoz() {
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert("Seu navegador não suporta reconhecimento de voz.");
+            return;
+        }
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
         recognition.lang = 'pt-BR';
-        recognition.onresult = (e) => {
-            document.getElementById('playerName').value = e.results[0][0].transcript.toUpperCase();
-            adicionarJogador();
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        recognition.onstart = () => {
+            document.getElementById('voiceBtn').textContent = "🎤 Ouvindo...";
+            document.getElementById('voiceBtn').style.opacity = "0.8";
+        };
+        recognition.onresult = (event) => {
+            let text = event.results[0][0].transcript.replace(/[.?!]/g, "").trim().toUpperCase();
+            if (text) {
+                document.getElementById('playerName').value = text;
+                adicionarJogador();
+            }
+        };
+        recognition.onend = () => {
+            document.getElementById('voiceBtn').textContent = "🎤 Falar";
+            document.getElementById('voiceBtn').style.opacity = "1";
         };
         recognition.start();
     }
@@ -114,9 +553,12 @@
         list.innerHTML = "";
         playerNames.forEach(name => {
             const li = document.createElement('li');
-            li.textContent = name;
+            const span = document.createElement('span');
+            span.textContent = name;
+            li.appendChild(span);
             const btn = document.createElement('button');
-            btn.innerHTML = '✏️'; btn.className = 'edit-btn';
+            btn.innerHTML = '✏️';
+            btn.className = 'edit-btn';
             btn.onclick = () => editarNome(name);
             li.appendChild(btn);
             list.appendChild(li);
@@ -125,19 +567,30 @@
 
     function editarNome(oldName) {
         let newName = prompt(`Novo nome para ${oldName}:`, oldName);
-        if (newName) {
-            const clean = newName.toUpperCase();
+        if (newName && newName.trim() !== "") {
+            const clean = newName.trim().toUpperCase();
+            if (clean !== oldName && players[clean]) { alert("Nome já existe!"); return; }
             players[clean] = players[oldName];
-            delete players[oldName];
-            playerNames = playerNames.map(n => n === oldName ? clean : n);
+            if (clean !== oldName) delete players[oldName];
+            const i = playerNames.indexOf(oldName);
+            if (i !== -1) playerNames[i] = clean;
             atualizarListaJogadores();
         }
     }
 
+    function esconderTodasTelas() {
+        ['registrationCard','roundIntroCard','votingCard','roundResultsCard','finalResultsCard']
+            .forEach(id => document.getElementById(id).style.display = "none");
+    }
+
     function iniciarJogo() {
-        if (playerNames.length < 3) return alert("Mínimo 3 jogadores.");
-        winningScoreTarget = parseInt(document.getElementById('targetScore').value);
-        playOrder = [...playerNames].sort(() => Math.random() - 0.5);
+        if (playerNames.length < 3) { alert("Você precisa de pelo menos 3 jogadores."); return; }
+        winningScoreTarget = parseInt(document.getElementById('targetScore').value) || 30;
+        playOrder = [...playerNames];
+        for (let i = playOrder.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [playOrder[i], playOrder[j]] = [playOrder[j], playOrder[i]];
+        }
         storytellerIndex = 0;
         mostrarTelaNarrador();
     }
@@ -146,110 +599,218 @@
         esconderTodasTelas();
         storyteller = playOrder[storytellerIndex];
         document.getElementById('roundNumberDisplay').textContent = roundNumber;
-        document.getElementById('storytellerText').textContent = storyteller;
+        const bigBadge = document.getElementById('storytellerHighlight');
+        bigBadge.textContent = storyteller;
         document.getElementById('roundIntroCard').style.display = "block";
-        setTimeout(() => ajustarNome('storytellerText'), 100);
+        fitText(bigBadge, 38, 14);
     }
 
     function iniciarVotacao() {
-        esconderTodasTelas(); votes = {}; popularSelects(); verificarEstadoVotacao();
-        document.getElementById('storytellerDisplay').textContent = storyteller;
+        esconderTodasTelas();
+        votes = {};
+        const smallBadge = document.getElementById('storytellerSmall');
+        smallBadge.textContent = `NARRADOR: ${storyteller}`;
+        document.getElementById('voteLogList').innerHTML = "";
+        popularSelects();
+        verificarEstadoVotacao();
         document.getElementById('votingCard').style.display = "block";
+        fitText(smallBadge, 17, 10);
     }
 
     function popularSelects() {
-        const vS = document.getElementById('voterSelect'); vS.innerHTML = "";
-        playerNames.forEach(n => { if (n !== storyteller) vS.innerHTML += `<option value="${n}">${n}</option>`; });
+        const voterSelect = document.getElementById('voterSelect');
+        voterSelect.innerHTML = "";
+        playerNames.forEach(name => {
+            if (name !== storyteller) {
+                const opt = document.createElement('option');
+                opt.value = name; opt.textContent = name;
+                voterSelect.appendChild(opt);
+            }
+        });
         atualizarOpcoesCartas();
     }
 
     function atualizarOpcoesCartas() {
-        const vS = document.getElementById('voterSelect'), cS = document.getElementById('cardOwnerSelect');
-        cS.innerHTML = "";
-        playerNames.forEach(n => { if (n !== vS.value) cS.innerHTML += `<option value="${n}">${n}</option>`; });
-    }
-
-    function registrarVoto() {
-        const v = document.getElementById('voterSelect').value, o = document.getElementById('cardOwnerSelect').value;
-        if (!votes[o]) votes[o] = [];
-        for (let k in votes) votes[k] = votes[k].filter(x => x !== v);
-        votes[o].push(v);
-        atualizarLogVotos();
-        verificarEstadoVotacao();
-        avancarParaProximoEleitor();
+        const voterSelect = document.getElementById('voterSelect');
+        const cardOwnerSelect = document.getElementById('cardOwnerSelect');
+        const selectedVoter = voterSelect.value;
+        const current = cardOwnerSelect.value;
+        cardOwnerSelect.innerHTML = "";
+        playerNames.forEach(name => {
+            if (name !== selectedVoter) {
+                const opt = document.createElement('option');
+                opt.value = name; opt.textContent = name;
+                cardOwnerSelect.appendChild(opt);
+            }
+        });
+        if (current && current !== selectedVoter && playerNames.includes(current)) {
+            cardOwnerSelect.value = current;
+        }
     }
 
     function verificarEstadoVotacao() {
-        const totalVoters = playerNames.length - 1, totalVoted = Object.values(votes).flat().length;
-        document.getElementById('registerVoteBtn').disabled = totalVoted >= totalVoters;
-        document.getElementById('endGameBtn').style.display = totalVoted >= totalVoters ? "block" : "none";
+        const totalVoters = playerNames.length - 1;
+        let totalVotes = 0;
+        for (let k in votes) totalVotes += votes[k].length;
+        const regBtn = document.getElementById('registerVoteBtn');
+        const endBtn = document.getElementById('endGameBtn');
+        const sel1 = document.getElementById('voterSelect');
+        const sel2 = document.getElementById('cardOwnerSelect');
+        if (totalVotes >= totalVoters) {
+            regBtn.disabled = true;
+            regBtn.textContent = "✓ TODOS VOTARAM";
+            endBtn.style.display = "block";
+            sel1.disabled = true; sel2.disabled = true;
+        } else {
+            regBtn.disabled = false;
+            regBtn.textContent = "Registrar Voto";
+            endBtn.style.display = "none";
+            sel1.disabled = false; sel2.disabled = false;
+        }
     }
 
-    function atualizarLogVotos() {
-        const log = document.getElementById('voteLogList'); log.innerHTML = "";
-        for (let o in votes) votes[o].forEach(v => {
-            const li = document.createElement('li');
-            li.innerHTML = `${v} ➔ ${o} <button class="edit-btn" onclick="corrigirVoto('${v}','${o}')">✏️</button>`;
-            log.appendChild(li);
-        });
+    function registrarVoto() {
+        const voter = document.getElementById('voterSelect').value;
+        const cardOwner = document.getElementById('cardOwnerSelect').value;
+        if (!votes[cardOwner]) votes[cardOwner] = [];
+        for (let k in votes) votes[k] = votes[k].filter(v => v !== voter);
+        votes[cardOwner].push(voter);
+        atualizarLogVotos();
+        avancarParaProximoEleitor();
+        verificarEstadoVotacao();
     }
 
-    function corrigirVoto(v, o) {
-        votes[o] = votes[o].filter(x => x !== v);
-        atualizarLogVotos(); verificarEstadoVotacao();
+    function corrigirVoto(voter, owner) {
+        votes[owner] = votes[owner].filter(v => v !== voter);
+        atualizarLogVotos();
+        const vs = document.getElementById('voterSelect');
+        vs.value = voter;
+        atualizarOpcoesCartas();
+        verificarEstadoVotacao();
     }
 
     function avancarParaProximoEleitor() {
-        const voters = playerNames.filter(n => n !== storyteller);
-        const voted = Object.values(votes).flat();
-        const next = voters.find(v => !voted.includes(v));
-        if (next) { document.getElementById('voterSelect').value = next; atualizarOpcoesCartas(); }
+        const allVoters = playerNames.filter(n => n !== storyteller);
+        const voted = [];
+        for (let k in votes) voted.push(...votes[k]);
+        const next = allVoters.find(v => !voted.includes(v));
+        if (next) {
+            document.getElementById('voterSelect').value = next;
+            atualizarOpcoesCartas();
+        }
+    }
+
+    function atualizarLogVotos() {
+        const log = document.getElementById('voteLogList');
+        log.innerHTML = "";
+        for (let owner in votes) {
+            votes[owner].forEach(voter => {
+                const li = document.createElement('li');
+                const span = document.createElement('span');
+                span.textContent = `${voter} ➔ ${owner}`;
+                li.appendChild(span);
+                const btn = document.createElement('button');
+                btn.innerHTML = '✏️';
+                btn.className = 'edit-btn';
+                btn.onclick = () => corrigirVoto(voter, owner);
+                li.appendChild(btn);
+                log.appendChild(li);
+            });
+        }
     }
 
     function finalizarRodada() {
-        const sVotes = votes[storyteller] ? votes[storyteller].length : 0;
-        if (sVotes === 0 || sVotes === playerNames.length - 1) {
-            playerNames.forEach(n => { if (n !== storyteller) players[n] += 2; });
-        } else {
-            players[storyteller] += (3 + sVotes);
-            votes[storyteller]?.forEach(v => players[v] += 3);
+        const totalVoters = playerNames.length - 1;
+        const storytellerVotes = votes[storyteller] || [];
+        const svCount = storytellerVotes.length;
+        // Regra: +1 ponto por cada voto recebido na carta
+        // Narrador ganha +3 bônus SE recebeu votos, mas não todos
+        for (let owner in votes) {
+            players[owner] += votes[owner].length;
         }
-        for (let o in votes) if (o !== storyteller) players[o] += votes[o].length;
-        
-        let max = Math.max(...Object.values(players));
-        max >= winningScoreTarget ? mostrarVencedor() : mostrarPlacar();
+        // Bônus do narrador: só se não foi punição (0 votos ou todos)
+        if (svCount > 0 && svCount < totalVoters) {
+            players[storyteller] += 3;
+        } else {
+            // Punição: narrador não ganha o bônus, tira os pontos de carta que ganharia
+            players[storyteller] -= svCount;
+        }
+        let maxScore = 0;
+        playerNames.forEach(name => { if (players[name] > maxScore) maxScore = players[name]; });
+        if (maxScore >= winningScoreTarget) mostrarVencedor();
+        else mostrarPlacarRodada();
     }
 
-    function mostrarPlacar() {
+    function mostrarPlacarRodada() {
         esconderTodasTelas();
-        const list = document.getElementById('currentScoresList'); list.innerHTML = "";
-        Object.entries(players).sort((a,b) => b[1]-a[1]).forEach(([n, s]) => list.innerHTML += `<li>${n} <strong>${s} pts</strong></li>`);
+        const list = document.getElementById('currentScoresList');
+        list.innerHTML = "";
+        [...playerNames].sort((a,b) => players[b]-players[a]).forEach(name => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${name}</span><span class="score-pts">${players[name]} pts</span>`;
+            list.appendChild(li);
+        });
         document.getElementById('roundResultsCard').style.display = "block";
     }
 
     function proximaRodada() {
-        roundNumber++; storytellerIndex = (storytellerIndex + 1) % playOrder.length; mostrarTelaNarrador();
+        roundNumber++;
+        storytellerIndex = (storytellerIndex + 1) % playOrder.length;
+        mostrarTelaNarrador();
+    }
+
+    function tocarSomDeFesta() {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.5);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        osc.start(now); osc.stop(now + 0.5);
+    }
+
+    function dispararConfeteESom() {
+        tocarSomDeFesta();
+        if (typeof confetti === "function") {
+            const end = Date.now() + 3000;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+            const interval = setInterval(() => {
+                const left = end - Date.now();
+                if (left <= 0) return clearInterval(interval);
+                confetti({ ...defaults, particleCount: 50 * (left / 3000), origin: { x: Math.random(), y: Math.random() - 0.2 } });
+            }, 250);
+        }
     }
 
     function mostrarVencedor() {
         esconderTodasTelas();
-        const sorted = Object.entries(players).sort((a,b) => b[1]-a[1]);
-        const win = sorted[0][0];
-        document.getElementById('winnerDisplay').innerHTML = `🏆<br><div id="winnerText" class="fit-container">${win} VENCEU!</div>`;
-        const list = document.getElementById('finalScoresList'); list.innerHTML = "";
-        sorted.forEach(([n, s]) => list.innerHTML += `<li>${n} <strong>${s} pts</strong></li>`);
-        document.getElementById('finalResultsCard').style.display = "block";
-        
-        // Efeitos
-        if(typeof confetti === "function") confetti({ particleCount: 150, spread: 70 });
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator(); osc.connect(ctx.destination); osc.frequency.value = 600; osc.start(); osc.stop(0.5);
-        
-        setTimeout(() => ajustarNome('winnerText'), 50);
-    }
+        const sorted = [...playerNames].sort((a,b) => players[b]-players[a]);
+        const winScore = players[sorted[0]];
+        const winners = sorted.filter(n => players[n] === winScore);
 
-    function esconderTodasTelas() {
-        ['registrationCard', 'roundIntroCard', 'votingCard', 'roundResultsCard', 'finalResultsCard'].forEach(id => document.getElementById(id).style.display = "none");
+        const winnerDisplay = document.getElementById('winnerDisplay');
+        const nameHtml = winners.length > 1
+            ? `<div class="winner-sub">Empate!</div><div class="winner-name">${winners.join(' & ')}</div>`
+            : `<div class="winner-sub">Vencedor</div><div class="winner-name">${winners[0]}</div>`;
+        winnerDisplay.innerHTML = `<span class="trophy">🏆</span>${nameHtml}<div class="winner-sub" style="margin-top:8px">${winScore} pontos</div>`;
+
+        const list = document.getElementById('finalScoresList');
+        list.innerHTML = "";
+        sorted.forEach(name => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${name}</span><span class="score-pts">${players[name]} pts</span>`;
+            list.appendChild(li);
+        });
+
+        document.getElementById('finalResultsCard').style.display = "block";
+        dispararConfeteESom();
     }
 </script>
 </body>
