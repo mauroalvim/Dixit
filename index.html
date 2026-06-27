@@ -19,11 +19,15 @@
         .voice-btn:hover { background-color: #218838; }
         .start-btn { background-color: #17a2b8; margin-top: 20px; }
         .start-btn:hover { background-color: #138496; }
+        .next-btn { background-color: #ffc107; color: #333; }
+        .next-btn:hover { background-color: #e0a800; }
         #endGameBtn { background-color: #dc3545; }
         #endGameBtn:hover { background-color: #bd2130; }
         ul { list-style-type: none; padding: 0; }
         li { padding: 10px; background: #e9ecef; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
         .edit-btn { background: none; border: none; cursor: pointer; color: #007bff; font-size: 18px; margin-left: 10px; width: auto; padding: 0; margin-top: 0; display: inline; }
+        .score-highlight { font-size: 24px; font-weight: bold; color: #007bff; text-align: center; margin: 20px 0; }
+        .vote-log { font-size: 14px; color: #555; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -34,7 +38,7 @@
     <h2>1. Cadastro de Jogadores</h2>
     <div class="form-group">
         <label for="playerName">Nome do Jogador:</label>
-        <input type="text" id="playerName" placeholder="Digite ou fale o nome aqui">
+        <input type="text" id="playerName" placeholder="Ex: Mauro, Gabriel, Michele...">
     </div>
     
     <div class="btn-group">
@@ -45,41 +49,70 @@
     <h3>Jogadores Cadastrados:</h3>
     <ul id="playerList"></ul>
 
-    <button class="start-btn" onclick="iniciarJogo()">Iniciar Jogo</button>
+    <button class="start-btn" onclick="iniciarJogo()">Iniciar Partida</button>
 </div>
 
-<div id="gameCard" class="card" style="display:none;">
-    <h2>2. Painel da Rodada</h2>
-    <p><strong>Contador atual:</strong> <span id="storytellerDisplay"></span></p>
+<div id="roundIntroCard" class="card" style="display:none;">
+    <h2>Rodada <span id="roundNumberDisplay"></span></h2>
+    <p style="text-align: center; font-size: 18px;">O narrador (contador de história) da vez é:</p>
+    <div id="storytellerHighlight" class="score-highlight"></div>
+    <button class="start-btn" onclick="iniciarVotacao()">Iniciar Votação</button>
+</div>
+
+<div id="votingCard" class="card" style="display:none;">
+    <h2>Painel de Votação</h2>
+    <p><strong>Narrador:</strong> <span id="storytellerDisplay"></span></p>
     
     <div class="form-group">
-        <label for="voterSelect">Quem votou?</label>
+        <label for="voterSelect">Quem está votando?</label>
         <select id="voterSelect"></select>
     </div>
     <div class="form-group">
-        <label for="cardOwnerSelect">Na carta de quem?</label>
+        <label for="cardOwnerSelect">Votou na carta de quem?</label>
         <select id="cardOwnerSelect"></select>
     </div>
     <button onclick="registrarVoto()">Registrar Voto</button>
     
-    <button id="endGameBtn" onclick="finalizarPartida()">Finalizar Partida</button>
+    <div class="vote-log" id="voteLogContainer">
+        <h4>Votos Registrados:</h4>
+        <ul id="voteLogList"></ul>
+    </div>
+    
+    <button id="endGameBtn" onclick="finalizarRodada()" style="margin-top: 20px;">Encerrar Rodada</button>
 </div>
 
-<div id="resultsCard" class="card" style="display:none;">
-    <h2>Resultado Final</h2>
+<div id="roundResultsCard" class="card" style="display:none;">
+    <h2>Fim da Rodada!</h2>
+    <h3>Placar Atualizado:</h3>
+    <ul id="currentScoresList"></ul>
+    <button id="nextRoundBtn" class="next-btn" onclick="proximaRodada()">Próxima Rodada</button>
+    <button id="finishGameBtn" style="display:none; background-color: #28a745;" onclick="mostrarVencedor()">Ver Vencedor!</button>
+</div>
+
+<div id="finalResultsCard" class="card" style="display:none;">
+    <h2>Fim de Jogo! 🏆</h2>
+    <div id="winnerDisplay" class="score-highlight"></div>
+    <h3>Placar Final:</h3>
     <ul id="finalScoresList"></ul>
+    <button onclick="location.reload()">Jogar Novamente</button>
 </div>
 
 <script>
     let players = {};
+    let playerNames = []; 
+    let playOrder = []; 
+    let storytellerIndex = 0;
     let storyteller = "";
     let votes = {};
+    let roundNumber = 1;
+    const WINNING_SCORE = 30;
 
     function adicionarJogador() {
         const nameInput = document.getElementById('playerName');
         const name = nameInput.value.trim();
         if (name && !players[name]) {
             players[name] = 0;
+            playerNames.push(name);
             nameInput.value = "";
             atualizarListaJogadores();
         }
@@ -105,7 +138,6 @@
             let text = event.results[0][0].transcript;
             text = text.replace(/[.?!]/g, "").trim();
             if (text) {
-                // Formata com a primeira letra maiúscula por estética
                 text = text.charAt(0).toUpperCase() + text.slice(1);
                 document.getElementById('playerName').value = text;
                 adicionarJogador();
@@ -130,9 +162,8 @@
     function atualizarListaJogadores() {
         const list = document.getElementById('playerList');
         list.innerHTML = "";
-        for (let name in players) {
+        playerNames.forEach(name => {
             const li = document.createElement('li');
-            
             const nameSpan = document.createElement('span');
             nameSpan.textContent = name;
             li.appendChild(nameSpan);
@@ -140,12 +171,11 @@
             const editBtn = document.createElement('button');
             editBtn.innerHTML = '✏️'; 
             editBtn.className = 'edit-btn';
-            editBtn.title = 'Editar nome';
             editBtn.onclick = () => editarNome(name);
             li.appendChild(editBtn);
 
             list.appendChild(li);
-        }
+        });
     }
 
     function editarNome(oldName) {
@@ -158,25 +188,54 @@
             }
             players[cleanNewName] = players[oldName];
             delete players[oldName];
+            
+            const index = playerNames.indexOf(oldName);
+            if (index !== -1) {
+                playerNames[index] = cleanNewName;
+            }
             atualizarListaJogadores();
         }
     }
 
+    function esconderTodasTelas() {
+        document.getElementById('registrationCard').style.display = "none";
+        document.getElementById('roundIntroCard').style.display = "none";
+        document.getElementById('votingCard').style.display = "none";
+        document.getElementById('roundResultsCard').style.display = "none";
+        document.getElementById('finalResultsCard').style.display = "none";
+    }
+
     function iniciarJogo() {
-        const names = Object.keys(players);
-        if (names.length < 3) {
+        if (playerNames.length < 3) {
             alert("Você precisa de pelo menos 3 jogadores para iniciar o Dixit.");
             return;
         }
         
-        const randomIndex = Math.floor(Math.random() * names.length);
-        storyteller = names[randomIndex];
+        playOrder = [...playerNames];
+        for (let i = playOrder.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [playOrder[i], playOrder[j]] = [playOrder[j], playOrder[i]];
+        }
         
-        document.getElementById('registrationCard').style.display = "none";
-        document.getElementById('gameCard').style.display = "block";
+        storytellerIndex = 0; 
+        mostrarTelaNarrador();
+    }
+
+    function mostrarTelaNarrador() {
+        esconderTodasTelas();
+        storyteller = playOrder[storytellerIndex];
+        document.getElementById('roundNumberDisplay').textContent = roundNumber;
+        document.getElementById('storytellerHighlight').textContent = storyteller;
+        document.getElementById('roundIntroCard').style.display = "block";
+    }
+
+    function iniciarVotacao() {
+        esconderTodasTelas();
+        votes = {}; 
         document.getElementById('storytellerDisplay').textContent = storyteller;
-        
+        document.getElementById('voteLogList').innerHTML = ""; 
         popularSelects();
+        document.getElementById('votingCard').style.display = "block";
     }
 
     function popularSelects() {
@@ -185,7 +244,7 @@
         voterSelect.innerHTML = "";
         cardOwnerSelect.innerHTML = "";
 
-        for (let name in players) {
+        playerNames.forEach(name => {
             if (name !== storyteller) {
                 const opt1 = document.createElement('option');
                 opt1.value = name;
@@ -197,56 +256,148 @@
             opt2.value = name;
             opt2.textContent = name;
             cardOwnerSelect.appendChild(opt2);
-        }
+        });
     }
 
     function registrarVoto() {
         const voter = document.getElementById('voterSelect').value;
         const cardOwner = document.getElementById('cardOwnerSelect').value;
         
+        if (voter === cardOwner) {
+            alert("Um jogador não pode votar na própria carta!");
+            return;
+        }
+
         if (!votes[cardOwner]) {
             votes[cardOwner] = [];
         }
-        votes[cardOwner].push(voter);
         
-        alert(`Voto de ${voter} na carta de ${cardOwner} registrado!`);
-        popularSelects();
+        for (let key in votes) {
+            votes[key] = votes[key].filter(v => v !== voter);
+        }
+
+        votes[cardOwner].push(voter);
+        atualizarLogVotos();
     }
 
-    function finalizarPartida() {
-        const totalVoters = Object.keys(players).length - 1;
-        let storytellerPoints = 0;
+    function atualizarLogVotos() {
+        const logList = document.getElementById('voteLogList');
+        logList.innerHTML = "";
+        for (let owner in votes) {
+            votes[owner].forEach(voter => {
+                const li = document.createElement('li');
+                li.textContent = `${voter} votou na carta de ${owner}`;
+                li.style.padding = "5px";
+                li.style.marginBottom = "2px";
+                logList.appendChild(li);
+            });
+        }
+    }
+
+    function finalizarRodada() {
+        const totalVoters = playerNames.length - 1;
+        let totalVotesCast = 0;
         
-        const storytellerVotes = votes[storyteller] ? votes[storyteller].length : 0;
+        for (let key in votes) {
+            totalVotesCast += votes[key].length;
+        }
+
+        if (totalVotesCast < totalVoters) {
+            if(!confirm("Nem todos os jogadores registraram seus votos. Deseja encerrar a rodada mesmo assim?")) {
+                return;
+            }
+        }
+
+        const storytellerVotes = votes[storyteller] ? votes[storyteller] : [];
+        const storytellerVotesCount = storytellerVotes.length;
         
-        if (storytellerVotes === 0 || storytellerVotes === totalVoters) {
-            storytellerPoints = 0;
-            for (let name in players) {
+        // Regra 1: Todos ou Ninguém acertou a carta do narrador
+        if (storytellerVotesCount === 0 || storytellerVotesCount === totalVoters) {
+            playerNames.forEach(name => {
                 if (name !== storyteller) {
                     players[name] += 2;
                 }
-            }
-        } else {
-            storytellerPoints += 3;
-            for (let name in votes) {
-                // Corrigido para somar os pontos acumulados corretamente nas rodadas
-                if (name !== storyteller) {
-                    players[name] += votes[name].length;
-                }
+            });
+        } 
+        // Regra 2: Alguns acertaram (COM A SUA REGRA DA CASA)
+        else {
+            // Narrador ganha 3 pontos + 1 ponto para cada pessoa que votou nele
+            players[storyteller] += (3 + storytellerVotesCount);
+            
+            // Quem acertou a carta do narrador ganha 3 pontos
+            storytellerVotes.forEach(voter => {
+                players[voter] += 3;
+            });
+        }
+
+        // Regra 3: Pontos por atrair votos para cartas falsas (Decoys)
+        for (let cardOwner in votes) {
+            if (cardOwner !== storyteller) {
+                players[cardOwner] += votes[cardOwner].length;
             }
         }
-        players[storyteller] += storytellerPoints;
         
-        document.getElementById('gameCard').style.display = "none";
-        document.getElementById('resultsCard').style.display = "block";
+        mostrarPlacarRodada();
+    }
+
+    function mostrarPlacarRodada() {
+        esconderTodasTelas();
         
-        const resultsList = document.getElementById('finalScoresList');
+        const resultsList = document.getElementById('currentScoresList');
         resultsList.innerHTML = "";
-        for (let name in players) {
+        
+        let maxScore = 0;
+        let sortedPlayers = [...playerNames].sort((a, b) => players[b] - players[a]);
+
+        sortedPlayers.forEach(name => {
+            const score = players[name];
+            if (score > maxScore) maxScore = score;
+            
             const li = document.createElement('li');
-            li.textContent = `${name}: ${players[name]} pontos`;
+            li.textContent = `${name}: ${score} pontos`;
             resultsList.appendChild(li);
+        });
+
+        if (maxScore >= WINNING_SCORE) {
+            document.getElementById('nextRoundBtn').style.display = "none";
+            document.getElementById('finishGameBtn').style.display = "block";
+        } else {
+            document.getElementById('nextRoundBtn').style.display = "block";
+            document.getElementById('finishGameBtn').style.display = "none";
         }
+
+        document.getElementById('roundResultsCard').style.display = "block";
+    }
+
+    function proximaRodada() {
+        roundNumber++;
+        storytellerIndex = (storytellerIndex + 1) % playOrder.length;
+        mostrarTelaNarrador();
+    }
+
+    function mostrarVencedor() {
+        esconderTodasTelas();
+        
+        let sortedPlayers = [...playerNames].sort((a, b) => players[b] - players[a]);
+        let winnerScore = players[sortedPlayers[0]];
+        let winners = sortedPlayers.filter(name => players[name] === winnerScore);
+        
+        const winnerDisplay = document.getElementById('winnerDisplay');
+        if (winners.length > 1) {
+            winnerDisplay.textContent = `Empate entre: ${winners.join(" e ")}!`;
+        } else {
+            winnerDisplay.textContent = `🏆 O vencedor é ${winners[0]}! 🏆`;
+        }
+
+        const finalResultsList = document.getElementById('finalScoresList');
+        finalResultsList.innerHTML = "";
+        sortedPlayers.forEach(name => {
+            const li = document.createElement('li');
+            li.innerHTML = `<strong>${name}</strong>: ${players[name]} pontos`;
+            finalResultsList.appendChild(li);
+        });
+
+        document.getElementById('finalResultsCard').style.display = "block";
     }
 </script>
 
