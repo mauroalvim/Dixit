@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dixit Score Counter</title>
     
-    <!-- BIBLIOTECA PARA O EFEITO DE CONFETE (PAPELZINHO VOANDO) -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
@@ -146,23 +145,20 @@
             font-size: 16px;
         }
 
-        /* AJUSTES ANTI-VIBRAÇÃO E ANTI-QUEBRA (RESPONSIVIDADE) */
+        /* AJUSTES ANTI-QUEBRA DE LINHA SEM "TRÊS PONTINHOS" */
         .narrator-badge, .winner-badge {
             width: 100%;
             box-sizing: border-box;
             padding: 15px 10px; 
-            /* A mágica acontece aqui: A fonte diminui se a tela for pequena */
-            font-size: clamp(16px, 7.5vw, 32px); 
             font-weight: 900;
             text-align: center;
             border-radius: 16px;
             margin: 20px 0;
             box-shadow: 0 8px 20px rgba(0,0,0,0.1);
             
-            /* Trava a linha */
+            /* Trava a linha e esconde o excesso temporariamente até o JS ajustar a fonte */
             white-space: nowrap; 
             overflow: hidden;
-            text-overflow: ellipsis;
         }
         
         .narrator-badge {
@@ -175,8 +171,6 @@
             background-color: #fffbeb;
             color: #b45309;
             padding: 12px;
-            /* Responsivo também para o nome menor */
-            font-size: clamp(14px, 5vw, 18px); 
             font-weight: 800;
             text-align: center;
             border-radius: 10px;
@@ -185,7 +179,6 @@
             
             white-space: nowrap; 
             overflow: hidden;
-            text-overflow: ellipsis;
         }
         
         .winner-badge {
@@ -202,6 +195,12 @@
             font-size: 48px;
             margin-bottom: 5px;
         }
+        
+        #winnerText {
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+        }
 
         .vote-log { margin-top: 24px; }
         .vote-log li { background-color: #fff; font-size: 14px; }
@@ -211,7 +210,6 @@
 
 <h1>Dixit Score Counter 🎲</h1>
 
-<!-- TELA 1: CADASTRO -->
 <div id="registrationCard" class="card">
     <h2>Configuração</h2>
     
@@ -237,7 +235,6 @@
     <button class="start-btn" onclick="iniciarJogo()">Iniciar Partida</button>
 </div>
 
-<!-- TELA 2: ANÚNCIO DO NARRADOR -->
 <div id="roundIntroCard" class="card" style="display:none;">
     <h2 style="text-align: center; border: none;">Rodada <span id="roundNumberDisplay"></span></h2>
     <p style="text-align: center; font-size: 16px; color: var(--text-muted); margin-bottom: 5px;">O narrador da vez é:</p>
@@ -247,11 +244,10 @@
     <button class="start-btn" onclick="iniciarVotacao()">Iniciar Votação</button>
 </div>
 
-<!-- TELA 3: PAINEL DE VOTAÇÃO -->
 <div id="votingCard" class="card" style="display:none;">
     <h2 style="margin-bottom: 20px;">Votação</h2>
     
-    <div class="narrator-small-badge">
+    <div id="smallBadgeContainer" class="narrator-small-badge">
         NARRADOR: <span id="storytellerDisplay"></span>
     </div>
     
@@ -271,18 +267,15 @@
         <ul id="voteLogList"></ul>
     </div>
     
-    <!-- ESCONDIDO POR PADRÃO -->
     <button id="endGameBtn" style="display:none;" onclick="finalizarRodada()">Encerrar Rodada</button>
 </div>
 
-<!-- TELA 4: PLACAR DA RODADA -->
 <div id="roundResultsCard" class="card" style="display:none;">
     <h2>Placar da Rodada</h2>
     <ul id="currentScoresList" style="margin-top: 20px; margin-bottom: 24px;"></ul>
     <button class="start-btn" onclick="proximaRodada()">Próxima Rodada</button>
 </div>
 
-<!-- TELA 5: TELA FINAL -->
 <div id="finalResultsCard" class="card" style="display:none;">
     <h2 style="text-align: center; border: none; font-size: 24px;">Fim de Jogo!</h2>
     
@@ -302,6 +295,21 @@
     let votes = {};
     let roundNumber = 1;
     let winningScoreTarget = 30;
+
+    // FUNÇÃO MÁGICA: Ajusta a fonte para caber na tela sem três pontinhos
+    function ajustarFonteParaCaber(elementoId, tamanhoMaximo) {
+        const el = document.getElementById(elementoId);
+        if (!el) return;
+        
+        let fontSize = tamanhoMaximo;
+        el.style.fontSize = fontSize + 'px';
+        
+        // Enquanto o texto for maior que o container e a fonte maior que 10px, diminui a fonte
+        while (el.scrollWidth > el.clientWidth && fontSize > 10) {
+            fontSize--;
+            el.style.fontSize = fontSize + 'px';
+        }
+    }
 
     function adicionarJogador() {
         const nameInput = document.getElementById('playerName');
@@ -421,6 +429,9 @@
         document.getElementById('roundNumberDisplay').textContent = roundNumber;
         document.getElementById('storytellerHighlight').textContent = storyteller;
         document.getElementById('roundIntroCard').style.display = "block";
+        
+        // Ajusta a fonte após a tela estar visível na tela
+        setTimeout(() => ajustarFonteParaCaber('storytellerHighlight', 36), 50);
     }
 
     function iniciarVotacao() {
@@ -431,6 +442,9 @@
         popularSelects();
         verificarEstadoVotacao(); 
         document.getElementById('votingCard').style.display = "block";
+        
+        // Ajusta a fonte no crachá menor
+        setTimeout(() => ajustarFonteParaCaber('smallBadgeContainer', 18), 50);
     }
 
     function popularSelects() {
@@ -626,14 +640,12 @@
 
     // SINTETIZADOR DE SOM NATIVO E CONFETES
     function tocarSomDeFesta() {
-        // Tenta iniciar o contexto de áudio
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
         
         const ctx = new AudioContext();
         const now = ctx.currentTime;
         
-        // Oscilador para fazer o som de uma corneta de festa (Glissando rápido)
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         
@@ -642,24 +654,20 @@
         
         osc.type = 'sawtooth';
         
-        // Frequência começando aguda e descendo
         osc.frequency.setValueAtTime(600, now);
         osc.frequency.exponentialRampToValueAtTime(300, now + 0.5);
         
-        // Volume
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.3, now + 0.05); // Fade in rápido
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5); // Fade out
+        gain.gain.linearRampToValueAtTime(0.3, now + 0.05); 
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5); 
         
         osc.start(now);
         osc.stop(now + 0.5);
     }
 
     function dispararConfeteESom() {
-        // Dispara o som
         tocarSomDeFesta();
         
-        // Dispara o visual
         if (typeof confetti === "function") {
             var duration = 3 * 1000;
             var animationEnd = Date.now() + duration;
@@ -690,9 +698,9 @@
         let htmlConteudo = `<div class="trophy-icon">🏆</div>`;
         
         if (winners.length > 1) {
-            htmlConteudo += `<div style="font-size: clamp(14px, 5vw, 24px);">EMPATE!</div><div style="font-size: clamp(14px, 5vw, 24px);">${winners.join(" & ")}</div>`;
+            htmlConteudo += `<div style="font-size: 16px;">EMPATE!</div><div id="winnerText">${winners.join(" E ")}</div>`;
         } else {
-            htmlConteudo += `<div>${winners[0]} VENCEU!</div>`;
+            htmlConteudo += `<div id="winnerText">${winners[0]} VENCEU!</div>`;
         }
         
         winnerDisplay.innerHTML = htmlConteudo;
@@ -707,7 +715,9 @@
 
         document.getElementById('finalResultsCard').style.display = "block";
         
-        // Ativa os efeitos de vitória 🎉🎶
+        // Ajusta a fonte do vencedor
+        setTimeout(() => ajustarFonteParaCaber('winnerText', 32), 50);
+        
         dispararConfeteESom();
     }
 </script>
