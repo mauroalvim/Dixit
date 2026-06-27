@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dixit Score Counter v5</title>
+    <title>Dixit Score Counter v6</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root { --primary: #4361ee; --bg: #f3f4f6; --card-bg: #ffffff; --text-main: #1f2937; }
@@ -17,10 +17,11 @@
         button:disabled { background-color: #d1d5db !important; cursor: not-allowed; }
         .edit-btn { background: #e2e8f0; color: var(--text-main); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
         
+        /* Ajuste fino para nomes longos */
         .fit-container { white-space: nowrap; display: inline-block; transform-origin: center; transition: transform 0.1s; }
         .narrator-badge { background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #fff; padding: 20px 10px; font-size: 32px; font-weight: 900; text-align: center; border-radius: 16px; margin: 20px 0; border: 3px solid #e0a800; overflow: hidden; }
-        .winner-badge { background: linear-gradient(135deg, #10b981, #34d399); color: #fff; padding: 20px 10px; font-weight: 900; text-align: center; border-radius: 16px; margin: 20px 0; overflow: hidden; }
-        .version-footer { text-align: center; font-size: 10px; color: #aaa; margin-top: 20px; text-transform: uppercase; }
+        .winner-badge { background: linear-gradient(135deg, #10b981, #34d399); color: #fff; padding: 20px 10px; font-size: 28px; font-weight: 900; text-align: center; border-radius: 16px; margin: 20px 0; overflow: hidden; }
+        .version-footer { text-align: center; font-size: 12px; color: #aaa; margin-top: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -35,11 +36,11 @@
     </div>
     <h2>Jogadores</h2>
     <div class="form-group"><input type="text" id="playerName" placeholder="NOME DO JOGADOR"></div>
-    <div class="btn-group" style="display:flex; gap:10px;">
+    <div style="display:flex; gap:10px;">
         <button onclick="adicionarJogador()">Adicionar</button>
         <button onclick="iniciarVoz()" style="background-color:#10b981;">🎤 Falar</button>
     </div>
-    <ul id="playerList"></ul>
+    <ul id="playerList" style="margin-top:20px;"></ul>
     <button onclick="iniciarJogo()" style="background-color:black; margin-top:24px;">Iniciar Partida</button>
 </div>
 
@@ -50,34 +51,40 @@
 </div>
 
 <div id="votingCard" class="card" style="display:none;">
+    <h2 style="margin-bottom: 20px;">Votação</h2>
+    <div style="background:#fffbeb; padding:10px; border-radius:10px; text-align:center; font-weight:bold; margin-bottom:20px;">
+        NARRADOR: <span id="storytellerDisplay"></span>
+    </div>
     <div class="form-group"><label>Quem vota?</label><select id="voterSelect" onchange="atualizarOpcoesCartas()"></select></div>
     <div class="form-group"><label>Vota em quem?</label><select id="cardOwnerSelect"></select></div>
     <button id="registerVoteBtn" onclick="registrarVoto()">Registrar Voto</button>
-    <ul id="voteLogList"></ul>
+    <ul id="voteLogList" style="margin-top:20px;"></ul>
     <button id="endGameBtn" style="display:none; background-color:red;" onclick="finalizarRodada()">Encerrar Rodada</button>
 </div>
 
 <div id="roundResultsCard" class="card" style="display:none;">
     <h2>Placar da Rodada</h2>
-    <ul id="currentScoresList"></ul>
+    <ul id="currentScoresList" style="margin-top:20px; margin-bottom:20px;"></ul>
     <button onclick="proximaRodada()">Próxima Rodada</button>
 </div>
 
 <div id="finalResultsCard" class="card" style="display:none;">
     <div id="winnerDisplay" class="winner-badge"></div>
-    <ul id="finalScoresList"></ul>
+    <ul id="finalScoresList" style="margin-bottom:20px;"></ul>
     <button onclick="location.reload()">Jogar Novamente</button>
 </div>
 
-<div class="version-footer">Versão 5.0</div>
+<div class="version-footer">Versão 6.0</div>
 
 <script>
     let players = {}, playerNames = [], playOrder = [], storytellerIndex = 0, storyteller = "", votes = {}, roundNumber = 1, winningScoreTarget = 30;
 
+    // Função para ajustar o nome sem quebrar a linha
     function ajustarNome(id) {
         const container = document.getElementById(id);
+        if (!container) return;
         container.style.transform = 'scale(1)';
-        const parentWidth = container.parentElement.clientWidth - 40;
+        const parentWidth = container.parentElement.clientWidth - 20;
         if (container.scrollWidth > parentWidth) {
             container.style.transform = `scale(${parentWidth / container.scrollWidth})`;
         }
@@ -88,6 +95,41 @@
         const name = input.value.trim().toUpperCase();
         if (name && !players[name]) {
             players[name] = 0; playerNames.push(name); input.value = "";
+            atualizarListaJogadores();
+        }
+    }
+
+    function iniciarVoz() {
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'pt-BR';
+        recognition.onresult = (e) => {
+            document.getElementById('playerName').value = e.results[0][0].transcript.toUpperCase();
+            adicionarJogador();
+        };
+        recognition.start();
+    }
+
+    function atualizarListaJogadores() {
+        const list = document.getElementById('playerList');
+        list.innerHTML = "";
+        playerNames.forEach(name => {
+            const li = document.createElement('li');
+            li.textContent = name;
+            const btn = document.createElement('button');
+            btn.innerHTML = '✏️'; btn.className = 'edit-btn';
+            btn.onclick = () => editarNome(name);
+            li.appendChild(btn);
+            list.appendChild(li);
+        });
+    }
+
+    function editarNome(oldName) {
+        let newName = prompt(`Novo nome para ${oldName}:`, oldName);
+        if (newName) {
+            const clean = newName.toUpperCase();
+            players[clean] = players[oldName];
+            delete players[oldName];
+            playerNames = playerNames.map(n => n === oldName ? clean : n);
             atualizarListaJogadores();
         }
     }
@@ -106,11 +148,12 @@
         document.getElementById('roundNumberDisplay').textContent = roundNumber;
         document.getElementById('storytellerText').textContent = storyteller;
         document.getElementById('roundIntroCard').style.display = "block";
-        setTimeout(() => ajustarNome('storytellerText'), 50);
+        setTimeout(() => ajustarNome('storytellerText'), 100);
     }
 
     function iniciarVotacao() {
         esconderTodasTelas(); votes = {}; popularSelects(); verificarEstadoVotacao();
+        document.getElementById('storytellerDisplay').textContent = storyteller;
         document.getElementById('votingCard').style.display = "block";
     }
 
@@ -131,7 +174,9 @@
         if (!votes[o]) votes[o] = [];
         for (let k in votes) votes[k] = votes[k].filter(x => x !== v);
         votes[o].push(v);
-        atualizarLogVotos(); verificarEstadoVotacao();
+        atualizarLogVotos();
+        verificarEstadoVotacao();
+        avancarParaProximoEleitor();
     }
 
     function verificarEstadoVotacao() {
@@ -142,12 +187,23 @@
 
     function atualizarLogVotos() {
         const log = document.getElementById('voteLogList'); log.innerHTML = "";
-        for (let o in votes) votes[o].forEach(v => log.innerHTML += `<li>${v} ➔ ${o} <button class="edit-btn" onclick="corrigirVoto('${v}','${o}')">✏️</button></li>`);
+        for (let o in votes) votes[o].forEach(v => {
+            const li = document.createElement('li');
+            li.innerHTML = `${v} ➔ ${o} <button class="edit-btn" onclick="corrigirVoto('${v}','${o}')">✏️</button>`;
+            log.appendChild(li);
+        });
     }
 
     function corrigirVoto(v, o) {
         votes[o] = votes[o].filter(x => x !== v);
         atualizarLogVotos(); verificarEstadoVotacao();
+    }
+
+    function avancarParaProximoEleitor() {
+        const voters = playerNames.filter(n => n !== storyteller);
+        const voted = Object.values(votes).flat();
+        const next = voters.find(v => !voted.includes(v));
+        if (next) { document.getElementById('voterSelect').value = next; atualizarOpcoesCartas(); }
     }
 
     function finalizarRodada() {
@@ -178,27 +234,22 @@
     function mostrarVencedor() {
         esconderTodasTelas();
         const sorted = Object.entries(players).sort((a,b) => b[1]-a[1]);
-        const winner = sorted[0][0];
-        document.getElementById('winnerDisplay').innerHTML = `<div class="trophy-icon">🏆</div><div id="winnerText">${winner} VENCEU!</div>`;
+        const win = sorted[0][0];
+        document.getElementById('winnerDisplay').innerHTML = `🏆<br><div id="winnerText" class="fit-container">${win} VENCEU!</div>`;
         const list = document.getElementById('finalScoresList'); list.innerHTML = "";
         sorted.forEach(([n, s]) => list.innerHTML += `<li>${n} <strong>${s} pts</strong></li>`);
         document.getElementById('finalResultsCard').style.display = "block";
-        if(typeof confetti === "function") {
-            new AudioContext().createOscillator().start(); // Permissão de áudio
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        }
+        
+        // Efeitos
+        if(typeof confetti === "function") confetti({ particleCount: 150, spread: 70 });
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator(); osc.connect(ctx.destination); osc.frequency.value = 600; osc.start(); osc.stop(0.5);
+        
         setTimeout(() => ajustarNome('winnerText'), 50);
     }
 
     function esconderTodasTelas() {
         ['registrationCard', 'roundIntroCard', 'votingCard', 'roundResultsCard', 'finalResultsCard'].forEach(id => document.getElementById(id).style.display = "none");
-    }
-
-    function iniciarVoz() {
-        const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        rec.lang = 'pt-BR';
-        rec.onresult = (e) => { document.getElementById('playerName').value = e.results[0][0].transcript.toUpperCase(); adicionarJogador(); };
-        rec.start();
     }
 </script>
 </body>
