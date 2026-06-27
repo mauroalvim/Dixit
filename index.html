@@ -410,7 +410,7 @@
 
 <header class="app-header">
     <h1>Dixit <span>Score</span> 🎲</h1>
-    <span class="version-tag">v8</span>
+    <span class="version-tag">v8.1</span>
 </header>
 
 <!-- TELA 1: CADASTRO -->
@@ -618,15 +618,29 @@
     }
 
     function popularSelects() {
+        atualizarVoterSelect();
+        atualizarOpcoesCartas();
+    }
+
+    function getJaVotaram() {
+        const voted = [];
+        for (let k in votes) voted.push(...votes[k]);
+        return voted;
+    }
+
+    function atualizarVoterSelect(forceVoter) {
         const voterSelect = document.getElementById('voterSelect');
+        const jaVotaram = getJaVotaram();
+        const current = forceVoter || voterSelect.value;
         voterSelect.innerHTML = "";
-        playerNames.forEach(name => {
-            if (name !== storyteller) {
-                const opt = document.createElement('option');
-                opt.value = name; opt.textContent = name;
-                voterSelect.appendChild(opt);
-            }
+        // Mostra só quem ainda não votou
+        const pendentes = playerNames.filter(n => n !== storyteller && !jaVotaram.includes(n));
+        pendentes.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name; opt.textContent = name;
+            voterSelect.appendChild(opt);
         });
+        if (current && pendentes.includes(current)) voterSelect.value = current;
         atualizarOpcoesCartas();
     }
 
@@ -676,29 +690,18 @@
         for (let k in votes) votes[k] = votes[k].filter(v => v !== voter);
         votes[cardOwner].push(voter);
         atualizarLogVotos();
-        avancarParaProximoEleitor();
+        atualizarVoterSelect(); // remove quem acabou de votar
         verificarEstadoVotacao();
     }
 
     function corrigirVoto(voter, owner) {
         votes[owner] = votes[owner].filter(v => v !== voter);
         atualizarLogVotos();
-        const vs = document.getElementById('voterSelect');
-        vs.value = voter;
-        atualizarOpcoesCartas();
+        atualizarVoterSelect(voter); // devolve a pessoa ao select
         verificarEstadoVotacao();
     }
 
-    function avancarParaProximoEleitor() {
-        const allVoters = playerNames.filter(n => n !== storyteller);
-        const voted = [];
-        for (let k in votes) voted.push(...votes[k]);
-        const next = allVoters.find(v => !voted.includes(v));
-        if (next) {
-            document.getElementById('voterSelect').value = next;
-            atualizarOpcoesCartas();
-        }
-    }
+    
 
     function atualizarLogVotos() {
         const log = document.getElementById('voteLogList');
