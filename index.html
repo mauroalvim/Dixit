@@ -28,6 +28,32 @@
         .edit-btn { background: none; border: none; cursor: pointer; color: #007bff; font-size: 18px; margin-left: 10px; width: auto; padding: 0; margin-top: 0; display: inline; }
         .score-highlight { font-size: 24px; font-weight: bold; color: #007bff; text-align: center; margin: 20px 0; }
         .vote-log { font-size: 14px; color: #555; margin-top: 10px; }
+        
+        /* NOVOS ESTILOS PARA O NARRADOR */
+        .narrator-badge {
+            background-color: #ffc107;
+            color: #000;
+            padding: 20px;
+            font-size: 36px; /* Tamanho bem grande */
+            font-weight: 900;
+            text-align: center;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-transform: uppercase;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 3px solid #e0a800;
+        }
+        .narrator-small-badge {
+            background-color: #ffc107;
+            color: #000;
+            padding: 10px;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
@@ -53,19 +79,24 @@
 </div>
 
 <div id="roundIntroCard" class="card" style="display:none;">
-    <h2>Rodada <span id="roundNumberDisplay"></span></h2>
-    <p style="text-align: center; font-size: 18px;">O narrador (contador de história) da vez é:</p>
-    <div id="storytellerHighlight" class="score-highlight"></div>
+    <h2 style="text-align: center;">Rodada <span id="roundNumberDisplay"></span></h2>
+    <p style="text-align: center; font-size: 18px; color: #555; margin-bottom: 5px;">O narrador da vez é:</p>
+    
+    <div id="storytellerHighlight" class="narrator-badge"></div>
+    
     <button class="start-btn" onclick="iniciarVotacao()">Iniciar Votação</button>
 </div>
 
 <div id="votingCard" class="card" style="display:none;">
     <h2>Painel de Votação</h2>
-    <p><strong>Narrador:</strong> <span id="storytellerDisplay"></span></p>
+    
+    <div class="narrator-small-badge">
+        Narrador: <span id="storytellerDisplay"></span>
+    </div>
     
     <div class="form-group">
         <label for="voterSelect">Quem está votando?</label>
-        <select id="voterSelect"></select>
+        <select id="voterSelect" onchange="atualizarOpcoesCartas()"></select>
     </div>
     <div class="form-group">
         <label for="cardOwnerSelect">Votou na carta de quem?</label>
@@ -240,34 +271,47 @@
 
     function popularSelects() {
         const voterSelect = document.getElementById('voterSelect');
-        const cardOwnerSelect = document.getElementById('cardOwnerSelect');
         voterSelect.innerHTML = "";
-        cardOwnerSelect.innerHTML = "";
 
         playerNames.forEach(name => {
             if (name !== storyteller) {
-                const opt1 = document.createElement('option');
-                opt1.value = name;
-                opt1.textContent = name;
-                voterSelect.appendChild(opt1);
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                voterSelect.appendChild(opt);
             }
-            
-            const opt2 = document.createElement('option');
-            opt2.value = name;
-            opt2.textContent = name;
-            cardOwnerSelect.appendChild(opt2);
         });
+        
+        atualizarOpcoesCartas();
+    }
+
+    function atualizarOpcoesCartas() {
+        const voterSelect = document.getElementById('voterSelect');
+        const cardOwnerSelect = document.getElementById('cardOwnerSelect');
+        
+        const selectedVoter = voterSelect.value;
+        const currentCardSelection = cardOwnerSelect.value; 
+
+        cardOwnerSelect.innerHTML = "";
+
+        playerNames.forEach(name => {
+            if (name !== selectedVoter) {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                cardOwnerSelect.appendChild(opt);
+            }
+        });
+
+        if (currentCardSelection && currentCardSelection !== selectedVoter && playerNames.includes(currentCardSelection)) {
+            cardOwnerSelect.value = currentCardSelection;
+        }
     }
 
     function registrarVoto() {
         const voter = document.getElementById('voterSelect').value;
         const cardOwner = document.getElementById('cardOwnerSelect').value;
         
-        if (voter === cardOwner) {
-            alert("Um jogador não pode votar na própria carta!");
-            return;
-        }
-
         if (!votes[cardOwner]) {
             votes[cardOwner] = [];
         }
@@ -278,6 +322,23 @@
 
         votes[cardOwner].push(voter);
         atualizarLogVotos();
+
+        avancarParaProximoEleitor();
+    }
+
+    function avancarParaProximoEleitor() {
+        const allVoters = playerNames.filter(n => n !== storyteller);
+        const votersWhoVoted = [];
+        for (let key in votes) {
+            votersWhoVoted.push(...votes[key]);
+        }
+        
+        const nextVoter = allVoters.find(v => !votersWhoVoted.includes(v));
+        
+        if (nextVoter) {
+            document.getElementById('voterSelect').value = nextVoter;
+            atualizarOpcoesCartas(); 
+        }
     }
 
     function atualizarLogVotos() {
@@ -311,7 +372,6 @@
         const storytellerVotes = votes[storyteller] ? votes[storyteller] : [];
         const storytellerVotesCount = storytellerVotes.length;
         
-        // Regra 1: Todos ou Ninguém acertou a carta do narrador
         if (storytellerVotesCount === 0 || storytellerVotesCount === totalVoters) {
             playerNames.forEach(name => {
                 if (name !== storyteller) {
@@ -319,18 +379,14 @@
                 }
             });
         } 
-        // Regra 2: Alguns acertaram (COM A SUA REGRA DA CASA)
         else {
-            // Narrador ganha 3 pontos + 1 ponto para cada pessoa que votou nele
             players[storyteller] += (3 + storytellerVotesCount);
             
-            // Quem acertou a carta do narrador ganha 3 pontos
             storytellerVotes.forEach(voter => {
                 players[voter] += 3;
             });
         }
 
-        // Regra 3: Pontos por atrair votos para cartas falsas (Decoys)
         for (let cardOwner in votes) {
             if (cardOwner !== storyteller) {
                 players[cardOwner] += votes[cardOwner].length;
