@@ -5,54 +5,173 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dixit Score Counter</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; max-width: 600px; margin: auto; }
-        h1 { color: #333; text-align: center; }
-        .card { background: #fff; padding: 20px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        button { width: 100%; padding: 15px; font-size: 16px; border: none; border-radius: 8px; background-color: #007bff; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        button:hover { background-color: #0056b3; }
-        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-group button { flex: 1; margin-top: 0; }
-        .voice-btn { background-color: #28a745; }
-        .voice-btn:hover { background-color: #218838; }
-        .start-btn { background-color: #17a2b8; margin-top: 20px; }
-        .start-btn:hover { background-color: #138496; }
-        .next-btn { background-color: #ffc107; color: #333; }
-        .next-btn:hover { background-color: #e0a800; }
-        #endGameBtn { background-color: #dc3545; }
-        #endGameBtn:hover { background-color: #bd2130; }
-        ul { list-style-type: none; padding: 0; }
-        li { padding: 10px; background: #e9ecef; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
-        .edit-btn { background: none; border: none; cursor: pointer; color: #007bff; font-size: 18px; margin-left: 10px; width: auto; padding: 0; margin-top: 0; display: inline; }
-        .score-highlight { font-size: 24px; font-weight: bold; color: #007bff; text-align: center; margin: 20px 0; }
-        .vote-log { font-size: 14px; color: #555; margin-top: 10px; }
+        /* PALETA DE CORES E FONTES MODERNAS */
+        :root {
+            --primary: #4361ee;
+            --primary-hover: #3a53d0;
+            --success: #10b981;
+            --success-hover: #059669;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            padding: 15px; 
+            background-color: var(--bg); 
+            color: var(--text-main);
+            max-width: 600px; 
+            margin: auto; 
+        }
+
+        h1 { 
+            text-align: center; 
+            font-size: 26px; 
+            font-weight: 800;
+            margin-bottom: 24px;
+            color: var(--text-main);
+        }
+
+        h2 { font-size: 20px; border-bottom: 2px solid var(--border); padding-bottom: 8px; margin-top: 0; }
+        h3 { font-size: 16px; color: var(--text-muted); margin-bottom: 10px; }
+
+        .card { 
+            background: var(--card-bg); 
+            padding: 24px; 
+            margin-bottom: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+        }
+
+        /* CONFIGURAÇÃO EM LINHA (SEM QUEBRA) */
+        .config-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+        .config-row label { margin: 0; font-weight: 600; font-size: 15px; }
+        .config-row input { 
+            width: 70px; 
+            text-align: center; 
+            font-size: 18px; 
+            font-weight: bold; 
+            padding: 8px; 
+            border-radius: 8px; 
+            border: 1px solid #cbd5e1;
+            color: var(--primary);
+        }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: var(--text-main); }
+        .form-group input[type="text"], .form-group select { 
+            width: 100%; 
+            padding: 12px; 
+            box-sizing: border-box; 
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+            font-size: 16px;
+            background-color: #fff;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* ESTILO DOS BOTÕES */
+        button { 
+            width: 100%; 
+            padding: 14px; 
+            font-size: 16px; 
+            border: none; 
+            border-radius: 12px; 
+            background-color: var(--primary); 
+            color: white; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            margin-top: 8px; 
+        }
+        button:active { transform: scale(0.98); }
+        button:disabled { background-color: #d1d5db !important; color: #9ca3af !important; cursor: not-allowed; transform: none; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 8px; }
+        .btn-group button { margin-top: 0; }
         
+        .voice-btn { background-color: var(--success); }
+        .start-btn { background-color: var(--text-main); margin-top: 24px; }
+        #endGameBtn { background-color: var(--danger); margin-top: 24px; font-size: 18px; }
+
+        /* ESTILO DAS LISTAS */
+        ul { list-style-type: none; padding: 0; margin: 0; }
+        li { 
+            padding: 12px 16px; 
+            background: #f8fafc; 
+            margin-bottom: 8px; 
+            border-radius: 10px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            font-weight: 500;
+            border: 1px solid var(--border);
+        }
+        
+        .edit-btn { 
+            background: #e2e8f0; 
+            color: var(--text-main); 
+            width: 36px; 
+            height: 36px; 
+            padding: 0; 
+            margin: 0; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 16px;
+        }
+
+        /* BADGES DO NARRADOR E VENCEDOR */
         .narrator-badge {
-            background-color: #ffc107;
-            color: #000;
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            color: #fff;
             padding: 20px;
-            font-size: 36px;
+            font-size: 32px;
             font-weight: 900;
             text-align: center;
-            border-radius: 8px;
+            border-radius: 16px;
             margin: 20px 0;
             text-transform: uppercase;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border: 3px solid #e0a800;
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
         .narrator-small-badge {
-            background-color: #ffc107;
-            color: #000;
-            padding: 10px;
-            font-size: 22px;
-            font-weight: bold;
+            background-color: #fffbeb;
+            color: #b45309;
+            padding: 12px;
+            font-size: 18px;
+            font-weight: 800;
             text-align: center;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-transform: uppercase;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            border: 2px dashed #fcd34d;
         }
+        .winner-badge {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .vote-log { margin-top: 24px; }
+        .vote-log li { background-color: #fff; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -60,33 +179,33 @@
 <h1>Dixit Score Counter 🎲</h1>
 
 <div id="registrationCard" class="card">
-    <h2>1. Configuração da Partida</h2>
+    <h2>Configuração</h2>
     
-    <div class="form-group" style="background-color: #e9ecef; padding: 15px; border-radius: 8px; border-left: 5px solid #17a2b8;">
-        <label for="targetScore">Pontuação Máxima (Meta para vencer):</label>
-        <input type="number" id="targetScore" value="30" min="1" style="font-size: 18px; font-weight: bold;">
+    <div class="config-row">
+        <label for="targetScore">Meta de Pontos:</label>
+        <input type="number" id="targetScore" value="30" min="1">
     </div>
 
-    <h3>2. Cadastro de Jogadores</h3>
+    <h2>Jogadores</h2>
     <div class="form-group">
-        <label for="playerName">Nome do Jogador:</label>
         <input type="text" id="playerName" placeholder="Ex: Mauro, Gabriel, Michele...">
     </div>
     
     <div class="btn-group">
-        <button onclick="adicionarJogador()">Escrever Nome</button>
-        <button id="voiceBtn" class="voice-btn" onclick="iniciarVoz()">🎤 Falar Nome</button>
+        <button onclick="adicionarJogador()">Adicionar</button>
+        <button id="voiceBtn" class="voice-btn" onclick="iniciarVoz()">🎤 Falar</button>
     </div>
 
-    <h3>Jogadores Cadastrados:</h3>
-    <ul id="playerList"></ul>
+    <div style="margin-top: 24px;">
+        <ul id="playerList"></ul>
+    </div>
 
     <button class="start-btn" onclick="iniciarJogo()">Iniciar Partida</button>
 </div>
 
 <div id="roundIntroCard" class="card" style="display:none;">
-    <h2 style="text-align: center;">Rodada <span id="roundNumberDisplay"></span></h2>
-    <p style="text-align: center; font-size: 18px; color: #555; margin-bottom: 5px;">O narrador da vez é:</p>
+    <h2 style="text-align: center; border: none;">Rodada <span id="roundNumberDisplay"></span></h2>
+    <p style="text-align: center; font-size: 16px; color: var(--text-muted); margin-bottom: 5px;">O narrador da vez é:</p>
     
     <div id="storytellerHighlight" class="narrator-badge"></div>
     
@@ -94,10 +213,10 @@
 </div>
 
 <div id="votingCard" class="card" style="display:none;">
-    <h2>Painel de Votação</h2>
+    <h2 style="margin-bottom: 20px;">Votação</h2>
     
     <div class="narrator-small-badge">
-        Narrador: <span id="storytellerDisplay"></span>
+        NARRADOR: <span id="storytellerDisplay"></span>
     </div>
     
     <div class="form-group">
@@ -105,34 +224,34 @@
         <select id="voterSelect" onchange="atualizarOpcoesCartas()"></select>
     </div>
     <div class="form-group">
-        <label for="cardOwnerSelect">Votou na carta de quem?</label>
+        <label for="cardOwnerSelect">Escolheu a carta de quem?</label>
         <select id="cardOwnerSelect"></select>
     </div>
-    <button onclick="registrarVoto()">Registrar Voto</button>
+    
+    <button id="registerVoteBtn" onclick="registrarVoto()">Registrar Voto</button>
     
     <div class="vote-log" id="voteLogContainer">
-        <h4>Votos Registrados:</h4>
+        <h3>Registros:</h3>
         <ul id="voteLogList"></ul>
     </div>
     
-    <button id="endGameBtn" onclick="finalizarRodada()" style="margin-top: 20px;">Encerrar Rodada</button>
+    <button id="endGameBtn" style="display:none;" onclick="finalizarRodada()">Encerrar Rodada</button>
 </div>
 
 <div id="roundResultsCard" class="card" style="display:none;">
-    <h2>Fim da Rodada!</h2>
-    <h3>Placar Atualizado:</h3>
-    <ul id="currentScoresList"></ul>
-    <button id="nextRoundBtn" class="next-btn" onclick="proximaRodada()">Próxima Rodada</button>
+    <h2>Placar da Rodada</h2>
+    <ul id="currentScoresList" style="margin-top: 20px; margin-bottom: 24px;"></ul>
+    <button class="start-btn" onclick="proximaRodada()">Próxima Rodada</button>
 </div>
 
 <div id="finalResultsCard" class="card" style="display:none;">
-    <h2 style="text-align: center; font-size: 28px;">Fim de Jogo! 🏆</h2>
+    <h2 style="text-align: center; border: none; font-size: 24px;">Fim de Jogo! 🏆</h2>
     
-    <div id="winnerDisplay" class="narrator-badge" style="background-color: #28a745; border-color: #218838; color: white;"></div>
+    <div id="winnerDisplay" class="narrator-badge winner-badge"></div>
     
-    <h3>Placar Final:</h3>
-    <ul id="finalScoresList"></ul>
-    <button onclick="location.reload()">Jogar Novamente</button>
+    <h3 style="margin-top: 24px;">Placar Final:</h3>
+    <ul id="finalScoresList" style="margin-bottom: 24px;"></ul>
+    <button class="start-btn" onclick="location.reload()">Jogar Novamente</button>
 </div>
 
 <script>
@@ -143,7 +262,7 @@
     let storyteller = "";
     let votes = {};
     let roundNumber = 1;
-    let winningScoreTarget = 30; // Variável atualizada no início do jogo
+    let winningScoreTarget = 30;
 
     function adicionarJogador() {
         const nameInput = document.getElementById('playerName');
@@ -158,7 +277,7 @@
 
     function iniciarVoz() {
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            alert("Seu navegador não suporta reconhecimento de voz no momento. Por favor, digite o nome.");
+            alert("Seu navegador não suporta reconhecimento de voz.");
             return;
         }
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -169,7 +288,7 @@
 
         recognition.onstart = function() {
             document.getElementById('voiceBtn').textContent = "🎤 Ouvindo...";
-            document.getElementById('voiceBtn').style.backgroundColor = "#ffc107";
+            document.getElementById('voiceBtn').style.opacity = "0.8";
         };
 
         recognition.onresult = function(event) {
@@ -183,15 +302,8 @@
         };
 
         recognition.onend = function() {
-            document.getElementById('voiceBtn').textContent = "🎤 Falar Nome";
-            document.getElementById('voiceBtn').style.backgroundColor = "#28a745";
-        };
-
-        recognition.onerror = function(event) {
-            console.error(event.error);
-            alert("Não entendi muito bem. Tente falar novamente ou digite o nome.");
-            document.getElementById('voiceBtn').textContent = "🎤 Falar Nome";
-            document.getElementById('voiceBtn').style.backgroundColor = "#28a745";
+            document.getElementById('voiceBtn').textContent = "🎤 Falar";
+            document.getElementById('voiceBtn').style.opacity = "1";
         };
 
         recognition.start();
@@ -202,9 +314,7 @@
         list.innerHTML = "";
         playerNames.forEach(name => {
             const li = document.createElement('li');
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = name;
-            li.appendChild(nameSpan);
+            li.textContent = name;
 
             const editBtn = document.createElement('button');
             editBtn.innerHTML = '✏️'; 
@@ -245,11 +355,10 @@
 
     function iniciarJogo() {
         if (playerNames.length < 3) {
-            alert("Você precisa de pelo menos 3 jogadores para iniciar o Dixit.");
+            alert("Você precisa de pelo menos 3 jogadores.");
             return;
         }
         
-        // Captura a pontuação máxima definida
         const targetInput = document.getElementById('targetScore').value;
         winningScoreTarget = parseInt(targetInput) || 30;
         
@@ -277,6 +386,7 @@
         document.getElementById('storytellerDisplay').textContent = storyteller;
         document.getElementById('voteLogList').innerHTML = ""; 
         popularSelects();
+        verificarEstadoVotacao(); // Checa os botões no início
         document.getElementById('votingCard').style.display = "block";
     }
 
@@ -319,6 +429,36 @@
         }
     }
 
+    // NOVA FUNÇÃO: Gerencia os botões baseados no progresso dos votos
+    function verificarEstadoVotacao() {
+        const totalVoters = playerNames.length - 1;
+        let totalVotesCast = 0;
+        for (let key in votes) {
+            totalVotesCast += votes[key].length;
+        }
+
+        const registerBtn = document.getElementById('registerVoteBtn');
+        const endRoundBtn = document.getElementById('endGameBtn');
+        const selectElement1 = document.getElementById('voterSelect');
+        const selectElement2 = document.getElementById('cardOwnerSelect');
+
+        if (totalVotesCast >= totalVoters) {
+            // Todos votaram
+            registerBtn.disabled = true;
+            registerBtn.textContent = "Todos Votaram! 🎉";
+            endRoundBtn.style.display = "block"; // Mostra o botão de encerrar
+            selectElement1.disabled = true;
+            selectElement2.disabled = true;
+        } else {
+            // Ainda faltam votos
+            registerBtn.disabled = false;
+            registerBtn.textContent = "Registrar Voto";
+            endRoundBtn.style.display = "none"; // Esconde o botão de encerrar
+            selectElement1.disabled = false;
+            selectElement2.disabled = false;
+        }
+    }
+
     function registrarVoto() {
         const voter = document.getElementById('voterSelect').value;
         const cardOwner = document.getElementById('cardOwnerSelect').value;
@@ -333,8 +473,8 @@
 
         votes[cardOwner].push(voter);
         atualizarLogVotos();
-
         avancarParaProximoEleitor();
+        verificarEstadoVotacao(); // Atualiza botões
     }
 
     function corrigirVoto(voter, owner) {
@@ -344,6 +484,7 @@
         const voterSelect = document.getElementById('voterSelect');
         voterSelect.value = voter;
         atualizarOpcoesCartas();
+        verificarEstadoVotacao(); // Como removemos um voto, isso libera a tela de registro de novo
     }
 
     function avancarParaProximoEleitor() {
@@ -369,13 +510,12 @@
                 const li = document.createElement('li');
                 
                 const spanTexto = document.createElement('span');
-                spanTexto.textContent = `${voter} votou na carta de ${owner}`;
+                spanTexto.textContent = `${voter} ➔ ${owner}`;
                 li.appendChild(spanTexto);
 
                 const editBtn = document.createElement('button');
                 editBtn.innerHTML = '✏️'; 
                 editBtn.className = 'edit-btn';
-                editBtn.title = 'Corrigir voto';
                 editBtn.onclick = () => corrigirVoto(voter, owner);
                 
                 li.appendChild(editBtn);
@@ -386,18 +526,6 @@
 
     function finalizarRodada() {
         const totalVoters = playerNames.length - 1;
-        let totalVotesCast = 0;
-        
-        for (let key in votes) {
-            totalVotesCast += votes[key].length;
-        }
-
-        if (totalVotesCast < totalVoters) {
-            if(!confirm("Nem todos os jogadores registraram seus votos. Deseja encerrar a rodada mesmo assim?")) {
-                return;
-            }
-        }
-
         const storytellerVotes = votes[storyteller] ? votes[storyteller] : [];
         const storytellerVotesCount = storytellerVotes.length;
         
@@ -410,7 +538,6 @@
         } 
         else {
             players[storyteller] += (3 + storytellerVotesCount);
-            
             storytellerVotes.forEach(voter => {
                 players[voter] += 3;
             });
@@ -422,16 +549,15 @@
             }
         }
         
-        // Verifica se alguém atingiu a pontuação máxima
         let maxScore = 0;
         playerNames.forEach(name => {
             if (players[name] > maxScore) maxScore = players[name];
         });
 
         if (maxScore >= winningScoreTarget) {
-            mostrarVencedor(); // Pula direto para a tela de vitória
+            mostrarVencedor(); 
         } else {
-            mostrarPlacarRodada(); // Continua para a próxima rodada
+            mostrarPlacarRodada(); 
         }
     }
 
@@ -445,7 +571,7 @@
 
         sortedPlayers.forEach(name => {
             const li = document.createElement('li');
-            li.textContent = `${name}: ${players[name]} pontos`;
+            li.innerHTML = `<span>${name}</span> <strong>${players[name]} pts</strong>`;
             resultsList.appendChild(li);
         });
 
@@ -467,16 +593,16 @@
         
         const winnerDisplay = document.getElementById('winnerDisplay');
         if (winners.length > 1) {
-            winnerDisplay.textContent = `EMPATE!\n${winners.join(" e ")}`;
+            winnerDisplay.innerHTML = `EMPATE!<br><span style="font-size: 20px">${winners.join(" & ")}</span>`;
         } else {
-            winnerDisplay.textContent = `🏆 ${winners[0]} VENCEU! 🏆`;
+            winnerDisplay.textContent = `🏆 ${winners[0]} VENCEU!`;
         }
 
         const finalResultsList = document.getElementById('finalScoresList');
         finalResultsList.innerHTML = "";
         sortedPlayers.forEach(name => {
             const li = document.createElement('li');
-            li.innerHTML = `<strong>${name}</strong>: ${players[name]} pontos`;
+            li.innerHTML = `<span>${name}</span> <strong>${players[name]} pts</strong>`;
             finalResultsList.appendChild(li);
         });
 
