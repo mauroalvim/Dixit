@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contador Dixit - Voz</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; max-width: 600px; margin: auto; }
+        h1 { color: #333; text-align: center; }
+        button { 
+            width: 100%; padding: 15px; font-size: 18px; margin: 10px 0; 
+            border-radius: 8px; border: none; background-color: #28a745; 
+            color: white; font-weight: bold; cursor: pointer;
+        }
+        button:active { background-color: #218838; }
+        .log, .placar-box { margin-top: 15px; padding: 15px; background: #fff; border: 1px solid #ccc; border-radius: 8px; }
+        ul { list-style-type: none; padding: 0; font-size: 18px; }
+        li { padding: 5px 0; border-bottom: 1px solid #eee; }
+    </style>
+</head>
+<body>
+
+    <h1>Contador Dixit 🎲</h1>
+    <p style="text-align: center;">Comandos de voz: <b>"Cadastrar [Nome]"</b> ou <b>"[Nome 1] escolheu a carta de [Nome 2]"</b>.</p>
+
+    <button onclick="iniciarReconhecimento()">🎤 Tocar para Falar</button>
+    
+    <div class="log">
+        <strong>Status:</strong> <span id="status">Aguardando comando...</span>
+    </div>
+
+    <div class="placar-box">
+        <h2>Placar Atual</h2>
+        <ul id="placar">
+            <li>Nenhum jogador cadastrado ainda.</li>
+        </ul>
+    </div>
+
+    <script>
+        const jogadores = {};
+        const statusDiv = document.getElementById('status');
+        const placarUl = document.getElementById('placar');
+
+        // Função para atualizar a tela com os pontos
+        function atualizarPlacar() {
+            placarUl.innerHTML = '';
+            for (let j in jogadores) {
+                let li = document.createElement('li');
+                li.innerHTML = `<strong>${j}</strong>: ${jogadores[j]} pontos`;
+                placarUl.appendChild(li);
+            }
+            if (Object.keys(jogadores).length === 0) {
+                placarUl.innerHTML = '<li>Nenhum jogador cadastrado ainda.</li>';
+            }
+        }
+
+        // Função principal que entende o que você falou
+        function processarComando(comando) {
+            comando = comando.toLowerCase().trim();
+            statusDiv.textContent = `Ouvi: "${comando}"`;
+
+            // Comando: Cadastrar [Nome]
+            if (comando.startsWith("cadastrar")) {
+                let nome = comando.replace("cadastrar", "").trim();
+                // Deixa a primeira letra maiúscula
+                nome = nome.charAt(0).toUpperCase() + nome.slice(1);
+                
+                if (nome && !jogadores[nome]) {
+                    jogadores[nome] = 0;
+                    statusDiv.textContent = `${nome} foi cadastrado com sucesso!`;
+                } else {
+                    statusDiv.textContent = `Jogador já existe ou nome inválido.`;
+                }
+            } 
+            // Comando: [Fulano] escolheu a carta de [Ciclano]
+            else if (comando.includes("escolheu a carta de") || comando.includes("escolheu a carta da") || comando.includes("escolheu a carta do")) {
+                // Aqui entraria a lógica complexa de separar quem é o narrador,
+                // mas de forma simplificada para o HTML base, apenas registra a ação.
+                statusDiv.textContent = `Voto registrado com sucesso! (Lógica de pontuação a ser finalizada na rodada)`;
+            } 
+            else {
+                statusDiv.textContent = `Comando não reconhecido. Tente dizer "Cadastrar [Nome]".`;
+            }
+            
+            atualizarPlacar();
+        }
+
+        // Função que aciona o microfone usando a API do navegador (Web Speech API)
+        function iniciarReconhecimento() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert("Infelizmente, o seu navegador não suporta reconhecimento de voz.");
+                return;
+            }
+            
+            const recognition = new webkitSpeechRecognition();
+            recognition.lang = 'pt-BR';
+            recognition.continuous = false; // Para de gravar após uma frase
+            recognition.interimResults = false;
+
+            recognition.onstart = function() {
+                statusDiv.textContent = "Pode falar, estou ouvindo...";
+                statusDiv.style.color = "green";
+            };
+
+            recognition.onresult = function(event) {
+                statusDiv.style.color = "black";
+                const transcricao = event.results[0][0].transcript;
+                processarComando(transcricao);
+            };
+
+            recognition.onerror = function(event) {
+                statusDiv.style.color = "red";
+                statusDiv.textContent = "Erro ao ouvir. Tente novamente.";
+            };
+
+            recognition.start();
+        }
+    </script>
+</body>
+</html>
