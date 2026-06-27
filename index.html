@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dixit Score Counter</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
     <style>
         /* PALETA DE CORES E FONTES MODERNAS */
         :root {
@@ -48,7 +51,6 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
         }
 
-        /* CONFIGURAÇÃO EM LINHA (SEM QUEBRA) */
         .config-row {
             display: flex;
             align-items: center;
@@ -59,7 +61,9 @@
             border: 1px solid var(--border);
             margin-bottom: 24px;
         }
+        
         .config-row label { margin: 0; font-weight: 600; font-size: 15px; }
+        
         .config-row input { 
             width: 70px; 
             text-align: center; 
@@ -82,13 +86,14 @@
             font-size: 16px;
             background-color: #fff;
             transition: border-color 0.2s;
+            text-transform: uppercase; /* Força maiúscula na visualização da digitação */
         }
+        
         .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: var(--primary);
         }
 
-        /* ESTILO DOS BOTÕES */
         button { 
             width: 100%; 
             padding: 14px; 
@@ -102,6 +107,7 @@
             transition: all 0.2s; 
             margin-top: 8px; 
         }
+        
         button:active { transform: scale(0.98); }
         button:disabled { background-color: #d1d5db !important; color: #9ca3af !important; cursor: not-allowed; transform: none; }
 
@@ -112,7 +118,6 @@
         .start-btn { background-color: var(--text-main); margin-top: 24px; }
         #endGameBtn { background-color: var(--danger); margin-top: 24px; font-size: 18px; }
 
-        /* ESTILO DAS LISTAS */
         ul { list-style-type: none; padding: 0; margin: 0; }
         li { 
             padding: 12px 16px; 
@@ -140,20 +145,28 @@
             font-size: 16px;
         }
 
-        /* BADGES DO NARRADOR E VENCEDOR */
-        .narrator-badge {
-            background: linear-gradient(135deg, #f59e0b, #fbbf24);
-            color: #fff;
-            padding: 20px;
-            font-size: 32px;
+        /* ESTRUTURA PARA EVITAR QUEBRA DE LINHA */
+        .narrator-badge, .winner-badge {
+            padding: 20px 10px; /* Reduzi o padding lateral para caber mais texto */
+            font-size: 28px; /* Ajuste para caber nomes na tela mobile */
             font-weight: 900;
             text-align: center;
             border-radius: 16px;
             margin: 20px 0;
-            text-transform: uppercase;
-            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            
+            /* REGRAS ANTI-QUEBRA DE LINHA */
+            white-space: nowrap; 
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
+        
+        .narrator-badge {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            color: #fff;
+            border: 3px solid #e0a800;
+        }
+        
         .narrator-small-badge {
             background-color: #fffbeb;
             color: #b45309;
@@ -164,10 +177,26 @@
             border-radius: 10px;
             margin-bottom: 24px;
             border: 2px dashed #fcd34d;
+            
+            /* REGRAS ANTI-QUEBRA DE LINHA */
+            white-space: nowrap; 
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
+        
         .winner-badge {
             background: linear-gradient(135deg, #10b981, #34d399);
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+            color: #fff;
+            border: 3px solid #059669;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .trophy-icon {
+            font-size: 48px;
+            margin-bottom: 5px;
         }
 
         .vote-log { margin-top: 24px; }
@@ -188,7 +217,7 @@
 
     <h2>Jogadores</h2>
     <div class="form-group">
-        <input type="text" id="playerName" placeholder="Ex: Mauro, Gabriel, Michele...">
+        <input type="text" id="playerName" placeholder="EX: MAURO, GABRIEL, MICHELE...">
     </div>
     
     <div class="btn-group">
@@ -245,9 +274,9 @@
 </div>
 
 <div id="finalResultsCard" class="card" style="display:none;">
-    <h2 style="text-align: center; border: none; font-size: 24px;">Fim de Jogo! 🏆</h2>
+    <h2 style="text-align: center; border: none; font-size: 24px;">Fim de Jogo!</h2>
     
-    <div id="winnerDisplay" class="narrator-badge winner-badge"></div>
+    <div id="winnerDisplay" class="winner-badge"></div>
     
     <h3 style="margin-top: 24px;">Placar Final:</h3>
     <ul id="finalScoresList" style="margin-bottom: 24px;"></ul>
@@ -266,7 +295,9 @@
 
     function adicionarJogador() {
         const nameInput = document.getElementById('playerName');
-        const name = nameInput.value.trim();
+        // Pega o nome, remove espaços nas bordas e FORÇA MAIÚSCULO
+        const name = nameInput.value.trim().toUpperCase(); 
+        
         if (name && !players[name]) {
             players[name] = 0;
             playerNames.push(name);
@@ -293,9 +324,9 @@
 
         recognition.onresult = function(event) {
             let text = event.results[0][0].transcript;
-            text = text.replace(/[.?!]/g, "").trim();
+            // Remove pontuação, espaços e FORÇA MAIÚSCULO
+            text = text.replace(/[.?!]/g, "").trim().toUpperCase(); 
             if (text) {
-                text = text.charAt(0).toUpperCase() + text.slice(1);
                 document.getElementById('playerName').value = text;
                 adicionarJogador();
             }
@@ -327,15 +358,19 @@
     }
 
     function editarNome(oldName) {
-        const newName = prompt(`Digite o novo nome para ${oldName}:`, oldName);
-        if (newName && newName.trim() !== "" && newName !== oldName) {
-            const cleanNewName = newName.trim();
-            if (players[cleanNewName]) {
+        let newName = prompt(`Digite o novo nome para ${oldName}:`, oldName);
+        if (newName && newName.trim() !== "") {
+            const cleanNewName = newName.trim().toUpperCase(); // Força maiúsculo na edição
+            
+            if (cleanNewName !== oldName && players[cleanNewName]) {
                 alert("Já existe um jogador com esse nome!");
                 return;
             }
+            
             players[cleanNewName] = players[oldName];
-            delete players[oldName];
+            if (cleanNewName !== oldName) {
+                delete players[oldName];
+            }
             
             const index = playerNames.indexOf(oldName);
             if (index !== -1) {
@@ -386,7 +421,7 @@
         document.getElementById('storytellerDisplay').textContent = storyteller;
         document.getElementById('voteLogList').innerHTML = ""; 
         popularSelects();
-        verificarEstadoVotacao(); // Checa os botões no início
+        verificarEstadoVotacao(); 
         document.getElementById('votingCard').style.display = "block";
     }
 
@@ -429,7 +464,6 @@
         }
     }
 
-    // NOVA FUNÇÃO: Gerencia os botões baseados no progresso dos votos
     function verificarEstadoVotacao() {
         const totalVoters = playerNames.length - 1;
         let totalVotesCast = 0;
@@ -443,17 +477,15 @@
         const selectElement2 = document.getElementById('cardOwnerSelect');
 
         if (totalVotesCast >= totalVoters) {
-            // Todos votaram
             registerBtn.disabled = true;
-            registerBtn.textContent = "Todos Votaram! 🎉";
-            endRoundBtn.style.display = "block"; // Mostra o botão de encerrar
+            registerBtn.textContent = "TODOS VOTARAM!";
+            endRoundBtn.style.display = "block"; 
             selectElement1.disabled = true;
             selectElement2.disabled = true;
         } else {
-            // Ainda faltam votos
             registerBtn.disabled = false;
             registerBtn.textContent = "Registrar Voto";
-            endRoundBtn.style.display = "none"; // Esconde o botão de encerrar
+            endRoundBtn.style.display = "none"; 
             selectElement1.disabled = false;
             selectElement2.disabled = false;
         }
@@ -474,7 +506,7 @@
         votes[cardOwner].push(voter);
         atualizarLogVotos();
         avancarParaProximoEleitor();
-        verificarEstadoVotacao(); // Atualiza botões
+        verificarEstadoVotacao(); 
     }
 
     function corrigirVoto(voter, owner) {
@@ -484,7 +516,7 @@
         const voterSelect = document.getElementById('voterSelect');
         voterSelect.value = voter;
         atualizarOpcoesCartas();
-        verificarEstadoVotacao(); // Como removemos um voto, isso libera a tela de registro de novo
+        verificarEstadoVotacao(); 
     }
 
     function avancarParaProximoEleitor() {
@@ -584,6 +616,26 @@
         mostrarTelaNarrador();
     }
 
+    // DISPARA O CONFETE E MOSTRA O RESULTADO
+    function dispararConfete() {
+        if (typeof confetti === "function") {
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                var particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } }));
+            }, 250);
+        }
+    }
+
     function mostrarVencedor() {
         esconderTodasTelas();
         
@@ -592,11 +644,17 @@
         let winners = sortedPlayers.filter(name => players[name] === winnerScore);
         
         const winnerDisplay = document.getElementById('winnerDisplay');
+        
+        // Estrutura do Troféu em cima do Nome para evitar quebra lateral
+        let htmlConteudo = `<div class="trophy-icon">🏆</div>`;
+        
         if (winners.length > 1) {
-            winnerDisplay.innerHTML = `EMPATE!<br><span style="font-size: 20px">${winners.join(" & ")}</span>`;
+            htmlConteudo += `<div>EMPATE!</div><div style="font-size: 20px">${winners.join(" & ")}</div>`;
         } else {
-            winnerDisplay.textContent = `🏆 ${winners[0]} VENCEU!`;
+            htmlConteudo += `<div>${winners[0]} VENCEU!</div>`;
         }
+        
+        winnerDisplay.innerHTML = htmlConteudo;
 
         const finalResultsList = document.getElementById('finalScoresList');
         finalResultsList.innerHTML = "";
@@ -607,6 +665,9 @@
         });
 
         document.getElementById('finalResultsCard').style.display = "block";
+        
+        // Ativa o efeito do papelzinho voando!
+        dispararConfete();
     }
 </script>
 
