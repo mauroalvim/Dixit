@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dixit Score Counter</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; max-width: 600px; margin: auto; }
+        h1 { color: #333; text-align: center; }
+        .card { background: #fff; padding: 20px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { width: 100%; padding: 15px; font-size: 16px; border: none; border-radius: 8px; background-color: #007bff; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { background-color: #0056b3; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-group button { flex: 1; margin-top: 0; }
+        .voice-btn { background-color: #28a745; }
+        .voice-btn:hover { background-color: #218838; }
+        .start-btn { background-color: #17a2b8; margin-top: 20px; }
+        .start-btn:hover { background-color: #138496; }
+        #endGameBtn { background-color: #dc3545; }
+        #endGameBtn:hover { background-color: #bd2130; }
+        ul { list-style-type: none; padding: 0; }
+        li { padding: 10px; background: #e9ecef; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .edit-btn { background: none; border: none; cursor: pointer; color: #007bff; font-size: 18px; margin-left: 10px; width: auto; padding: 0; margin-top: 0; display: inline; }
+    </style>
+</head>
+<body>
+
+<h1>Dixit Score Counter 🎲</h1>
+
+<div id="registrationCard" class="card">
+    <h2>1. Cadastro de Jogadores</h2>
+    <div class="form-group">
+        <label for="playerName">Nome do Jogador:</label>
+        <input type="text" id="playerName" placeholder="Digite ou fale o nome aqui">
+    </div>
+    
+    <div class="btn-group">
+        <button onclick="adicionarJogador()">Escrever Nome</button>
+        <button id="voiceBtn" class="voice-btn" onclick="iniciarVoz()">🎤 Falar Nome</button>
+    </div>
+
+    <h3>Jogadores Cadastrados:</h3>
+    <ul id="playerList"></ul>
+
+    <button class="start-btn" onclick="iniciarJogo()">Iniciar Jogo</button>
+</div>
+
+<div id="gameCard" class="card" style="display:none;">
+    <h2>2. Painel da Rodada</h2>
+    <p><strong>Contador atual:</strong> <span id="storytellerDisplay"></span></p>
+    
+    <div class="form-group">
+        <label for="voterSelect">Quem votou?</label>
+        <select id="voterSelect"></select>
+    </div>
+    <div class="form-group">
+        <label for="cardOwnerSelect">Na carta de quem?</label>
+        <select id="cardOwnerSelect"></select>
+    </div>
+    <button onclick="registrarVoto()">Registrar Voto</button>
+    
+    <button id="endGameBtn" onclick="finalizarPartida()">Finalizar Partida</button>
+</div>
+
+<div id="resultsCard" class="card" style="display:none;">
+    <h2>Resultado Final</h2>
+    <ul id="finalScoresList"></ul>
+</div>
+
+<script>
+    let players = {};
+    let storyteller = "";
+    let votes = {};
+
+    function adicionarJogador() {
+        const nameInput = document.getElementById('playerName');
+        const name = nameInput.value.trim();
+        if (name && !players[name]) {
+            players[name] = 0;
+            nameInput.value = "";
+            atualizarListaJogadores();
+        }
+    }
+
+    function iniciarVoz() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert("Seu navegador não suporta reconhecimento de voz no momento. Por favor, digite o nome.");
+            return;
+        }
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'pt-BR';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = function() {
+            document.getElementById('voiceBtn').textContent = "🎤 Ouvindo...";
+            document.getElementById('voiceBtn').style.backgroundColor = "#ffc107";
+        };
+
+        recognition.onresult = function(event) {
+            let text = event.results[0][0].transcript;
+            text = text.replace(/[.?!]/g, "").trim();
+            if (text) {
+                // Formata com a primeira letra maiúscula por estética
+                text = text.charAt(0).toUpperCase() + text.slice(1);
+                document.getElementById('playerName').value = text;
+                adicionarJogador();
+            }
+        };
+
+        recognition.onend = function() {
+            document.getElementById('voiceBtn').textContent = "🎤 Falar Nome";
+            document.getElementById('voiceBtn').style.backgroundColor = "#28a745";
+        };
+
+        recognition.onerror = function(event) {
+            console.error(event.error);
+            alert("Não entendi muito bem. Tente falar novamente ou digite o nome.");
+            document.getElementById('voiceBtn').textContent = "🎤 Falar Nome";
+            document.getElementById('voiceBtn').style.backgroundColor = "#28a745";
+        };
+
+        recognition.start();
+    }
+
+    function atualizarListaJogadores() {
+        const list = document.getElementById('playerList');
+        list.innerHTML = "";
+        for (let name in players) {
+            const li = document.createElement('li');
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = name;
+            li.appendChild(nameSpan);
+
+            const editBtn = document.createElement('button');
+            editBtn.innerHTML = '✏️'; 
+            editBtn.className = 'edit-btn';
+            editBtn.title = 'Editar nome';
+            editBtn.onclick = () => editarNome(name);
+            li.appendChild(editBtn);
+
+            list.appendChild(li);
+        }
+    }
+
+    function editarNome(oldName) {
+        const newName = prompt(`Digite o novo nome para ${oldName}:`, oldName);
+        if (newName && newName.trim() !== "" && newName !== oldName) {
+            const cleanNewName = newName.trim();
+            if (players[cleanNewName]) {
+                alert("Já existe um jogador com esse nome!");
+                return;
+            }
+            players[cleanNewName] = players[oldName];
+            delete players[oldName];
+            atualizarListaJogadores();
+        }
+    }
+
+    function iniciarJogo() {
+        const names = Object.keys(players);
+        if (names.length < 3) {
+            alert("Você precisa de pelo menos 3 jogadores para iniciar o Dixit.");
+            return;
+        }
+        
+        const randomIndex = Math.floor(Math.random() * names.length);
+        storyteller = names[randomIndex];
+        
+        document.getElementById('registrationCard').style.display = "none";
+        document.getElementById('gameCard').style.display = "block";
+        document.getElementById('storytellerDisplay').textContent = storyteller;
+        
+        popularSelects();
+    }
+
+    function popularSelects() {
+        const voterSelect = document.getElementById('voterSelect');
+        const cardOwnerSelect = document.getElementById('cardOwnerSelect');
+        voterSelect.innerHTML = "";
+        cardOwnerSelect.innerHTML = "";
+
+        for (let name in players) {
+            if (name !== storyteller) {
+                const opt1 = document.createElement('option');
+                opt1.value = name;
+                opt1.textContent = name;
+                voterSelect.appendChild(opt1);
+            }
+            
+            const opt2 = document.createElement('option');
+            opt2.value = name;
+            opt2.textContent = name;
+            cardOwnerSelect.appendChild(opt2);
+        }
+    }
+
+    function registrarVoto() {
+        const voter = document.getElementById('voterSelect').value;
+        const cardOwner = document.getElementById('cardOwnerSelect').value;
+        
+        if (!votes[cardOwner]) {
+            votes[cardOwner] = [];
+        }
+        votes[cardOwner].push(voter);
+        
+        alert(`Voto de ${voter} na carta de ${cardOwner} registrado!`);
+        popularSelects();
+    }
+
+    function finalizarPartida() {
+        const totalVoters = Object.keys(players).length - 1;
+        let storytellerPoints = 0;
+        
+        const storytellerVotes = votes[storyteller] ? votes[storyteller].length : 0;
+        
+        if (storytellerVotes === 0 || storytellerVotes === totalVoters) {
+            storytellerPoints = 0;
+            for (let name in players) {
+                if (name !== storyteller) {
+                    players[name] += 2;
+                }
+            }
+        } else {
+            storytellerPoints += 3;
+            for (let name in votes) {
+                // Corrigido para somar os pontos acumulados corretamente nas rodadas
+                if (name !== storyteller) {
+                    players[name] += votes[name].length;
+                }
+            }
+        }
+        players[storyteller] += storytellerPoints;
+        
+        document.getElementById('gameCard').style.display = "none";
+        document.getElementById('resultsCard').style.display = "block";
+        
+        const resultsList = document.getElementById('finalScoresList');
+        resultsList.innerHTML = "";
+        for (let name in players) {
+            const li = document.createElement('li');
+            li.textContent = `${name}: ${players[name]} pontos`;
+            resultsList.appendChild(li);
+        }
+    }
+</script>
+
+</body>
+</html>
