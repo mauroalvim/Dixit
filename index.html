@@ -29,12 +29,11 @@
         .score-highlight { font-size: 24px; font-weight: bold; color: #007bff; text-align: center; margin: 20px 0; }
         .vote-log { font-size: 14px; color: #555; margin-top: 10px; }
         
-        /* NOVOS ESTILOS PARA O NARRADOR */
         .narrator-badge {
             background-color: #ffc107;
             color: #000;
             padding: 20px;
-            font-size: 36px; /* Tamanho bem grande */
+            font-size: 36px;
             font-weight: 900;
             text-align: center;
             border-radius: 8px;
@@ -61,7 +60,14 @@
 <h1>Dixit Score Counter 🎲</h1>
 
 <div id="registrationCard" class="card">
-    <h2>1. Cadastro de Jogadores</h2>
+    <h2>1. Configuração da Partida</h2>
+    
+    <div class="form-group" style="background-color: #e9ecef; padding: 15px; border-radius: 8px; border-left: 5px solid #17a2b8;">
+        <label for="targetScore">Pontuação Máxima (Meta para vencer):</label>
+        <input type="number" id="targetScore" value="30" min="1" style="font-size: 18px; font-weight: bold;">
+    </div>
+
+    <h3>2. Cadastro de Jogadores</h3>
     <div class="form-group">
         <label for="playerName">Nome do Jogador:</label>
         <input type="text" id="playerName" placeholder="Ex: Mauro, Gabriel, Michele...">
@@ -117,12 +123,13 @@
     <h3>Placar Atualizado:</h3>
     <ul id="currentScoresList"></ul>
     <button id="nextRoundBtn" class="next-btn" onclick="proximaRodada()">Próxima Rodada</button>
-    <button id="finishGameBtn" style="display:none; background-color: #28a745;" onclick="mostrarVencedor()">Ver Vencedor!</button>
 </div>
 
 <div id="finalResultsCard" class="card" style="display:none;">
-    <h2>Fim de Jogo! 🏆</h2>
-    <div id="winnerDisplay" class="score-highlight"></div>
+    <h2 style="text-align: center; font-size: 28px;">Fim de Jogo! 🏆</h2>
+    
+    <div id="winnerDisplay" class="narrator-badge" style="background-color: #28a745; border-color: #218838; color: white;"></div>
+    
     <h3>Placar Final:</h3>
     <ul id="finalScoresList"></ul>
     <button onclick="location.reload()">Jogar Novamente</button>
@@ -136,7 +143,7 @@
     let storyteller = "";
     let votes = {};
     let roundNumber = 1;
-    const WINNING_SCORE = 30;
+    let winningScoreTarget = 30; // Variável atualizada no início do jogo
 
     function adicionarJogador() {
         const nameInput = document.getElementById('playerName');
@@ -242,6 +249,10 @@
             return;
         }
         
+        // Captura a pontuação máxima definida
+        const targetInput = document.getElementById('targetScore').value;
+        winningScoreTarget = parseInt(targetInput) || 30;
+        
         playOrder = [...playerNames];
         for (let i = playOrder.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -326,6 +337,15 @@
         avancarParaProximoEleitor();
     }
 
+    function corrigirVoto(voter, owner) {
+        votes[owner] = votes[owner].filter(v => v !== voter);
+        atualizarLogVotos();
+        
+        const voterSelect = document.getElementById('voterSelect');
+        voterSelect.value = voter;
+        atualizarOpcoesCartas();
+    }
+
     function avancarParaProximoEleitor() {
         const allVoters = playerNames.filter(n => n !== storyteller);
         const votersWhoVoted = [];
@@ -347,9 +367,18 @@
         for (let owner in votes) {
             votes[owner].forEach(voter => {
                 const li = document.createElement('li');
-                li.textContent = `${voter} votou na carta de ${owner}`;
-                li.style.padding = "5px";
-                li.style.marginBottom = "2px";
+                
+                const spanTexto = document.createElement('span');
+                spanTexto.textContent = `${voter} votou na carta de ${owner}`;
+                li.appendChild(spanTexto);
+
+                const editBtn = document.createElement('button');
+                editBtn.innerHTML = '✏️'; 
+                editBtn.className = 'edit-btn';
+                editBtn.title = 'Corrigir voto';
+                editBtn.onclick = () => corrigirVoto(voter, owner);
+                
+                li.appendChild(editBtn);
                 logList.appendChild(li);
             });
         }
@@ -393,7 +422,17 @@
             }
         }
         
-        mostrarPlacarRodada();
+        // Verifica se alguém atingiu a pontuação máxima
+        let maxScore = 0;
+        playerNames.forEach(name => {
+            if (players[name] > maxScore) maxScore = players[name];
+        });
+
+        if (maxScore >= winningScoreTarget) {
+            mostrarVencedor(); // Pula direto para a tela de vitória
+        } else {
+            mostrarPlacarRodada(); // Continua para a próxima rodada
+        }
     }
 
     function mostrarPlacarRodada() {
@@ -402,25 +441,13 @@
         const resultsList = document.getElementById('currentScoresList');
         resultsList.innerHTML = "";
         
-        let maxScore = 0;
         let sortedPlayers = [...playerNames].sort((a, b) => players[b] - players[a]);
 
         sortedPlayers.forEach(name => {
-            const score = players[name];
-            if (score > maxScore) maxScore = score;
-            
             const li = document.createElement('li');
-            li.textContent = `${name}: ${score} pontos`;
+            li.textContent = `${name}: ${players[name]} pontos`;
             resultsList.appendChild(li);
         });
-
-        if (maxScore >= WINNING_SCORE) {
-            document.getElementById('nextRoundBtn').style.display = "none";
-            document.getElementById('finishGameBtn').style.display = "block";
-        } else {
-            document.getElementById('nextRoundBtn').style.display = "block";
-            document.getElementById('finishGameBtn').style.display = "none";
-        }
 
         document.getElementById('roundResultsCard').style.display = "block";
     }
@@ -440,9 +467,9 @@
         
         const winnerDisplay = document.getElementById('winnerDisplay');
         if (winners.length > 1) {
-            winnerDisplay.textContent = `Empate entre: ${winners.join(" e ")}!`;
+            winnerDisplay.textContent = `EMPATE!\n${winners.join(" e ")}`;
         } else {
-            winnerDisplay.textContent = `🏆 O vencedor é ${winners[0]}! 🏆`;
+            winnerDisplay.textContent = `🏆 ${winners[0]} VENCEU! 🏆`;
         }
 
         const finalResultsList = document.getElementById('finalScoresList');
