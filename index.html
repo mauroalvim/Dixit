@@ -3,207 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dixit Score Counter</title>
-    
+    <title>Dixit Score Counter v5</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
     <style>
-        /* PALETA DE CORES E FONTES MODERNAS */
-        :root {
-            --primary: #4361ee;
-            --primary-hover: #3a53d0;
-            --success: #10b981;
-            --success-hover: #059669;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --bg: #f3f4f6;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-        }
-
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            padding: 15px; 
-            background-color: var(--bg); 
-            color: var(--text-main);
-            max-width: 600px; 
-            margin: auto; 
-        }
-
-        h1 { 
-            text-align: center; 
-            font-size: 26px; 
-            font-weight: 800;
-            margin-bottom: 24px;
-            color: var(--text-main);
-        }
-
-        h2 { font-size: 20px; border-bottom: 2px solid var(--border); padding-bottom: 8px; margin-top: 0; }
-        h3 { font-size: 16px; color: var(--text-muted); margin-bottom: 10px; }
-
-        .card { 
-            background: var(--card-bg); 
-            padding: 24px; 
-            margin-bottom: 20px; 
-            border-radius: 16px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
-        }
-
-        .config-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background-color: #f8fafc;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            margin-bottom: 24px;
-        }
-        
-        .config-row label { margin: 0; font-weight: 600; font-size: 15px; }
-        
-        .config-row input { 
-            width: 70px; 
-            text-align: center; 
-            font-size: 18px; 
-            font-weight: bold; 
-            padding: 8px; 
-            border-radius: 8px; 
-            border: 1px solid #cbd5e1;
-            color: var(--primary);
-        }
-
+        :root { --primary: #4361ee; --bg: #f3f4f6; --card-bg: #ffffff; --text-main: #1f2937; }
+        body { font-family: sans-serif; padding: 15px; background-color: var(--bg); color: var(--text-main); max-width: 600px; margin: auto; }
+        .card { background: var(--card-bg); padding: 24px; margin-bottom: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .config-row { display: flex; align-items: center; justify-content: space-between; background-color: #f8fafc; padding: 12px 16px; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 24px; }
+        .config-row input { width: 70px; text-align: center; font-size: 18px; font-weight: bold; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; color: var(--primary); }
         .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: var(--text-main); }
-        .form-group input[type="text"], .form-group select { 
-            width: 100%; 
-            padding: 12px; 
-            box-sizing: border-box; 
-            border: 1px solid var(--border); 
-            border-radius: 10px; 
-            font-size: 16px;
-            background-color: #fff;
-            transition: border-color 0.2s;
-            text-transform: uppercase; 
-        }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 16px; text-transform: uppercase; }
+        button { width: 100%; padding: 14px; font-size: 16px; border: none; border-radius: 12px; background-color: var(--primary); color: white; font-weight: 700; cursor: pointer; margin-top: 8px; }
+        button:disabled { background-color: #d1d5db !important; cursor: not-allowed; }
+        .edit-btn { background: #e2e8f0; color: var(--text-main); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
         
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        button { 
-            width: 100%; 
-            padding: 14px; 
-            font-size: 16px; 
-            border: none; 
-            border-radius: 12px; 
-            background-color: var(--primary); 
-            color: white; 
-            font-weight: 700; 
-            cursor: pointer; 
-            transition: all 0.2s; 
-            margin-top: 8px; 
-        }
-        
-        button:active { transform: scale(0.98); }
-        button:disabled { background-color: #d1d5db !important; color: #9ca3af !important; cursor: not-allowed; transform: none; }
-
-        .btn-group { display: flex; gap: 10px; margin-top: 8px; }
-        .btn-group button { margin-top: 0; }
-        
-        .voice-btn { background-color: var(--success); }
-        .start-btn { background-color: var(--text-main); margin-top: 24px; }
-        #endGameBtn { background-color: var(--danger); margin-top: 24px; font-size: 18px; }
-
-        ul { list-style-type: none; padding: 0; margin: 0; }
-        li { 
-            padding: 12px 16px; 
-            background: #f8fafc; 
-            margin-bottom: 8px; 
-            border-radius: 10px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            font-weight: 500;
-            border: 1px solid var(--border);
-        }
-        
-        .edit-btn { 
-            background: #e2e8f0; 
-            color: var(--text-main); 
-            width: 36px; 
-            height: 36px; 
-            padding: 0; 
-            margin: 0; 
-            border-radius: 8px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 16px;
-        }
-
-        /* AJUSTES ANTI-QUEBRA DE LINHA SEM "TRÊS PONTINHOS" */
-        .narrator-badge, .winner-badge {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 15px 10px; 
-            font-weight: 900;
-            text-align: center;
-            border-radius: 16px;
-            margin: 20px 0;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            
-            /* Trava a linha e esconde o excesso temporariamente até o JS ajustar a fonte */
-            white-space: nowrap; 
-            overflow: hidden;
-        }
-        
-        .narrator-badge {
-            background: linear-gradient(135deg, #f59e0b, #fbbf24);
-            color: #fff;
-            border: 3px solid #e0a800;
-        }
-        
-        .narrator-small-badge {
-            background-color: #fffbeb;
-            color: #b45309;
-            padding: 12px;
-            font-weight: 800;
-            text-align: center;
-            border-radius: 10px;
-            margin-bottom: 24px;
-            border: 2px dashed #fcd34d;
-            
-            white-space: nowrap; 
-            overflow: hidden;
-        }
-        
-        .winner-badge {
-            background: linear-gradient(135deg, #10b981, #34d399);
-            color: #fff;
-            border: 3px solid #059669;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .trophy-icon {
-            font-size: 48px;
-            margin-bottom: 5px;
-        }
-        
-        #winnerText {
-            width: 100%;
-            white-space: nowrap;
-            overflow: hidden;
-        }
-
-        .vote-log { margin-top: 24px; }
-        .vote-log li { background-color: #fff; font-size: 14px; }
+        .fit-container { white-space: nowrap; display: inline-block; transform-origin: center; transition: transform 0.1s; }
+        .narrator-badge { background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #fff; padding: 20px 10px; font-size: 32px; font-weight: 900; text-align: center; border-radius: 16px; margin: 20px 0; border: 3px solid #e0a800; overflow: hidden; }
+        .winner-badge { background: linear-gradient(135deg, #10b981, #34d399); color: #fff; padding: 20px 10px; font-weight: 900; text-align: center; border-radius: 16px; margin: 20px 0; overflow: hidden; }
+        .version-footer { text-align: center; font-size: 10px; color: #aaa; margin-top: 20px; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -212,214 +29,74 @@
 
 <div id="registrationCard" class="card">
     <h2>Configuração</h2>
-    
     <div class="config-row">
-        <label for="targetScore">Meta de Pontos:</label>
-        <input type="number" id="targetScore" value="30" min="1">
+        <label>Meta de Pontos:</label>
+        <input type="number" id="targetScore" value="30">
     </div>
-
     <h2>Jogadores</h2>
-    <div class="form-group">
-        <input type="text" id="playerName" placeholder="EX: MAURO, GABRIEL...">
-    </div>
-    
-    <div class="btn-group">
+    <div class="form-group"><input type="text" id="playerName" placeholder="NOME DO JOGADOR"></div>
+    <div class="btn-group" style="display:flex; gap:10px;">
         <button onclick="adicionarJogador()">Adicionar</button>
-        <button id="voiceBtn" class="voice-btn" onclick="iniciarVoz()">🎤 Falar</button>
+        <button onclick="iniciarVoz()" style="background-color:#10b981;">🎤 Falar</button>
     </div>
-
-    <div style="margin-top: 24px;">
-        <ul id="playerList"></ul>
-    </div>
-
-    <button class="start-btn" onclick="iniciarJogo()">Iniciar Partida</button>
+    <ul id="playerList"></ul>
+    <button onclick="iniciarJogo()" style="background-color:black; margin-top:24px;">Iniciar Partida</button>
 </div>
 
 <div id="roundIntroCard" class="card" style="display:none;">
-    <h2 style="text-align: center; border: none;">Rodada <span id="roundNumberDisplay"></span></h2>
-    <p style="text-align: center; font-size: 16px; color: var(--text-muted); margin-bottom: 5px;">O narrador da vez é:</p>
-    
-    <div id="storytellerHighlight" class="narrator-badge"></div>
-    
-    <button class="start-btn" onclick="iniciarVotacao()">Iniciar Votação</button>
+    <h2 style="text-align: center;">Rodada <span id="roundNumberDisplay"></span></h2>
+    <div class="narrator-badge"><div id="storytellerText" class="fit-container"></div></div>
+    <button onclick="iniciarVotacao()">Iniciar Votação</button>
 </div>
 
 <div id="votingCard" class="card" style="display:none;">
-    <h2 style="margin-bottom: 20px;">Votação</h2>
-    
-    <div id="smallBadgeContainer" class="narrator-small-badge">
-        NARRADOR: <span id="storytellerDisplay"></span>
-    </div>
-    
-    <div class="form-group">
-        <label for="voterSelect">Quem está votando?</label>
-        <select id="voterSelect" onchange="atualizarOpcoesCartas()"></select>
-    </div>
-    <div class="form-group">
-        <label for="cardOwnerSelect">Escolheu a carta de quem?</label>
-        <select id="cardOwnerSelect"></select>
-    </div>
-    
+    <div class="form-group"><label>Quem vota?</label><select id="voterSelect" onchange="atualizarOpcoesCartas()"></select></div>
+    <div class="form-group"><label>Vota em quem?</label><select id="cardOwnerSelect"></select></div>
     <button id="registerVoteBtn" onclick="registrarVoto()">Registrar Voto</button>
-    
-    <div class="vote-log" id="voteLogContainer">
-        <h3>Registros:</h3>
-        <ul id="voteLogList"></ul>
-    </div>
-    
-    <button id="endGameBtn" style="display:none;" onclick="finalizarRodada()">Encerrar Rodada</button>
+    <ul id="voteLogList"></ul>
+    <button id="endGameBtn" style="display:none; background-color:red;" onclick="finalizarRodada()">Encerrar Rodada</button>
 </div>
 
 <div id="roundResultsCard" class="card" style="display:none;">
     <h2>Placar da Rodada</h2>
-    <ul id="currentScoresList" style="margin-top: 20px; margin-bottom: 24px;"></ul>
-    <button class="start-btn" onclick="proximaRodada()">Próxima Rodada</button>
+    <ul id="currentScoresList"></ul>
+    <button onclick="proximaRodada()">Próxima Rodada</button>
 </div>
 
 <div id="finalResultsCard" class="card" style="display:none;">
-    <h2 style="text-align: center; border: none; font-size: 24px;">Fim de Jogo!</h2>
-    
     <div id="winnerDisplay" class="winner-badge"></div>
-    
-    <h3 style="margin-top: 24px;">Placar Final:</h3>
-    <ul id="finalScoresList" style="margin-bottom: 24px;"></ul>
-    <button class="start-btn" onclick="location.reload()">Jogar Novamente</button>
+    <ul id="finalScoresList"></ul>
+    <button onclick="location.reload()">Jogar Novamente</button>
 </div>
 
-<script>
-    let players = {};
-    let playerNames = []; 
-    let playOrder = []; 
-    let storytellerIndex = 0;
-    let storyteller = "";
-    let votes = {};
-    let roundNumber = 1;
-    let winningScoreTarget = 30;
+<div class="version-footer">Versão 5.0</div>
 
-    // FUNÇÃO MÁGICA: Ajusta a fonte para caber na tela sem três pontinhos
-    function ajustarFonteParaCaber(elementoId, tamanhoMaximo) {
-        const el = document.getElementById(elementoId);
-        if (!el) return;
-        
-        let fontSize = tamanhoMaximo;
-        el.style.fontSize = fontSize + 'px';
-        
-        // Enquanto o texto for maior que o container e a fonte maior que 10px, diminui a fonte
-        while (el.scrollWidth > el.clientWidth && fontSize > 10) {
-            fontSize--;
-            el.style.fontSize = fontSize + 'px';
+<script>
+    let players = {}, playerNames = [], playOrder = [], storytellerIndex = 0, storyteller = "", votes = {}, roundNumber = 1, winningScoreTarget = 30;
+
+    function ajustarNome(id) {
+        const container = document.getElementById(id);
+        container.style.transform = 'scale(1)';
+        const parentWidth = container.parentElement.clientWidth - 40;
+        if (container.scrollWidth > parentWidth) {
+            container.style.transform = `scale(${parentWidth / container.scrollWidth})`;
         }
     }
 
     function adicionarJogador() {
-        const nameInput = document.getElementById('playerName');
-        const name = nameInput.value.trim().toUpperCase(); 
-        
+        const input = document.getElementById('playerName');
+        const name = input.value.trim().toUpperCase();
         if (name && !players[name]) {
-            players[name] = 0;
-            playerNames.push(name);
-            nameInput.value = "";
+            players[name] = 0; playerNames.push(name); input.value = "";
             atualizarListaJogadores();
         }
-    }
-
-    function iniciarVoz() {
-        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            alert("Seu navegador não suporta reconhecimento de voz.");
-            return;
-        }
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'pt-BR';
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-
-        recognition.onstart = function() {
-            document.getElementById('voiceBtn').textContent = "🎤 Ouvindo...";
-            document.getElementById('voiceBtn').style.opacity = "0.8";
-        };
-
-        recognition.onresult = function(event) {
-            let text = event.results[0][0].transcript;
-            text = text.replace(/[.?!]/g, "").trim().toUpperCase(); 
-            if (text) {
-                document.getElementById('playerName').value = text;
-                adicionarJogador();
-            }
-        };
-
-        recognition.onend = function() {
-            document.getElementById('voiceBtn').textContent = "🎤 Falar";
-            document.getElementById('voiceBtn').style.opacity = "1";
-        };
-
-        recognition.start();
-    }
-
-    function atualizarListaJogadores() {
-        const list = document.getElementById('playerList');
-        list.innerHTML = "";
-        playerNames.forEach(name => {
-            const li = document.createElement('li');
-            li.textContent = name;
-
-            const editBtn = document.createElement('button');
-            editBtn.innerHTML = '✏️'; 
-            editBtn.className = 'edit-btn';
-            editBtn.onclick = () => editarNome(name);
-            li.appendChild(editBtn);
-
-            list.appendChild(li);
-        });
-    }
-
-    function editarNome(oldName) {
-        let newName = prompt(`Digite o novo nome para ${oldName}:`, oldName);
-        if (newName && newName.trim() !== "") {
-            const cleanNewName = newName.trim().toUpperCase();
-            
-            if (cleanNewName !== oldName && players[cleanNewName]) {
-                alert("Já existe um jogador com esse nome!");
-                return;
-            }
-            
-            players[cleanNewName] = players[oldName];
-            if (cleanNewName !== oldName) {
-                delete players[oldName];
-            }
-            
-            const index = playerNames.indexOf(oldName);
-            if (index !== -1) {
-                playerNames[index] = cleanNewName;
-            }
-            atualizarListaJogadores();
-        }
-    }
-
-    function esconderTodasTelas() {
-        document.getElementById('registrationCard').style.display = "none";
-        document.getElementById('roundIntroCard').style.display = "none";
-        document.getElementById('votingCard').style.display = "none";
-        document.getElementById('roundResultsCard').style.display = "none";
-        document.getElementById('finalResultsCard').style.display = "none";
     }
 
     function iniciarJogo() {
-        if (playerNames.length < 3) {
-            alert("Você precisa de pelo menos 3 jogadores.");
-            return;
-        }
-        
-        const targetInput = document.getElementById('targetScore').value;
-        winningScoreTarget = parseInt(targetInput) || 30;
-        
-        playOrder = [...playerNames];
-        for (let i = playOrder.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [playOrder[i], playOrder[j]] = [playOrder[j], playOrder[i]];
-        }
-        
-        storytellerIndex = 0; 
+        if (playerNames.length < 3) return alert("Mínimo 3 jogadores.");
+        winningScoreTarget = parseInt(document.getElementById('targetScore').value);
+        playOrder = [...playerNames].sort(() => Math.random() - 0.5);
+        storytellerIndex = 0;
         mostrarTelaNarrador();
     }
 
@@ -427,300 +104,102 @@
         esconderTodasTelas();
         storyteller = playOrder[storytellerIndex];
         document.getElementById('roundNumberDisplay').textContent = roundNumber;
-        document.getElementById('storytellerHighlight').textContent = storyteller;
+        document.getElementById('storytellerText').textContent = storyteller;
         document.getElementById('roundIntroCard').style.display = "block";
-        
-        // Ajusta a fonte após a tela estar visível na tela
-        setTimeout(() => ajustarFonteParaCaber('storytellerHighlight', 36), 50);
+        setTimeout(() => ajustarNome('storytellerText'), 50);
     }
 
     function iniciarVotacao() {
-        esconderTodasTelas();
-        votes = {}; 
-        document.getElementById('storytellerDisplay').textContent = storyteller;
-        document.getElementById('voteLogList').innerHTML = ""; 
-        popularSelects();
-        verificarEstadoVotacao(); 
+        esconderTodasTelas(); votes = {}; popularSelects(); verificarEstadoVotacao();
         document.getElementById('votingCard').style.display = "block";
-        
-        // Ajusta a fonte no crachá menor
-        setTimeout(() => ajustarFonteParaCaber('smallBadgeContainer', 18), 50);
     }
 
     function popularSelects() {
-        const voterSelect = document.getElementById('voterSelect');
-        voterSelect.innerHTML = "";
-
-        playerNames.forEach(name => {
-            if (name !== storyteller) {
-                const opt = document.createElement('option');
-                opt.value = name;
-                opt.textContent = name;
-                voterSelect.appendChild(opt);
-            }
-        });
-        
+        const vS = document.getElementById('voterSelect'); vS.innerHTML = "";
+        playerNames.forEach(n => { if (n !== storyteller) vS.innerHTML += `<option value="${n}">${n}</option>`; });
         atualizarOpcoesCartas();
     }
 
     function atualizarOpcoesCartas() {
-        const voterSelect = document.getElementById('voterSelect');
-        const cardOwnerSelect = document.getElementById('cardOwnerSelect');
-        
-        const selectedVoter = voterSelect.value;
-        const currentCardSelection = cardOwnerSelect.value; 
-
-        cardOwnerSelect.innerHTML = "";
-
-        playerNames.forEach(name => {
-            if (name !== selectedVoter) {
-                const opt = document.createElement('option');
-                opt.value = name;
-                opt.textContent = name;
-                cardOwnerSelect.appendChild(opt);
-            }
-        });
-
-        if (currentCardSelection && currentCardSelection !== selectedVoter && playerNames.includes(currentCardSelection)) {
-            cardOwnerSelect.value = currentCardSelection;
-        }
-    }
-
-    function verificarEstadoVotacao() {
-        const totalVoters = playerNames.length - 1;
-        let totalVotesCast = 0;
-        for (let key in votes) {
-            totalVotesCast += votes[key].length;
-        }
-
-        const registerBtn = document.getElementById('registerVoteBtn');
-        const endRoundBtn = document.getElementById('endGameBtn');
-        const selectElement1 = document.getElementById('voterSelect');
-        const selectElement2 = document.getElementById('cardOwnerSelect');
-
-        if (totalVotesCast >= totalVoters) {
-            registerBtn.disabled = true;
-            registerBtn.textContent = "TODOS VOTARAM!";
-            endRoundBtn.style.display = "block"; 
-            selectElement1.disabled = true;
-            selectElement2.disabled = true;
-        } else {
-            registerBtn.disabled = false;
-            registerBtn.textContent = "Registrar Voto";
-            endRoundBtn.style.display = "none"; 
-            selectElement1.disabled = false;
-            selectElement2.disabled = false;
-        }
+        const vS = document.getElementById('voterSelect'), cS = document.getElementById('cardOwnerSelect');
+        cS.innerHTML = "";
+        playerNames.forEach(n => { if (n !== vS.value) cS.innerHTML += `<option value="${n}">${n}</option>`; });
     }
 
     function registrarVoto() {
-        const voter = document.getElementById('voterSelect').value;
-        const cardOwner = document.getElementById('cardOwnerSelect').value;
-        
-        if (!votes[cardOwner]) {
-            votes[cardOwner] = [];
-        }
-        
-        for (let key in votes) {
-            votes[key] = votes[key].filter(v => v !== voter);
-        }
-
-        votes[cardOwner].push(voter);
-        atualizarLogVotos();
-        avancarParaProximoEleitor();
-        verificarEstadoVotacao(); 
+        const v = document.getElementById('voterSelect').value, o = document.getElementById('cardOwnerSelect').value;
+        if (!votes[o]) votes[o] = [];
+        for (let k in votes) votes[k] = votes[k].filter(x => x !== v);
+        votes[o].push(v);
+        atualizarLogVotos(); verificarEstadoVotacao();
     }
 
-    function corrigirVoto(voter, owner) {
-        votes[owner] = votes[owner].filter(v => v !== voter);
-        atualizarLogVotos();
-        
-        const voterSelect = document.getElementById('voterSelect');
-        voterSelect.value = voter;
-        atualizarOpcoesCartas();
-        verificarEstadoVotacao(); 
-    }
-
-    function avancarParaProximoEleitor() {
-        const allVoters = playerNames.filter(n => n !== storyteller);
-        const votersWhoVoted = [];
-        for (let key in votes) {
-            votersWhoVoted.push(...votes[key]);
-        }
-        
-        const nextVoter = allVoters.find(v => !votersWhoVoted.includes(v));
-        
-        if (nextVoter) {
-            document.getElementById('voterSelect').value = nextVoter;
-            atualizarOpcoesCartas(); 
-        }
+    function verificarEstadoVotacao() {
+        const totalVoters = playerNames.length - 1, totalVoted = Object.values(votes).flat().length;
+        document.getElementById('registerVoteBtn').disabled = totalVoted >= totalVoters;
+        document.getElementById('endGameBtn').style.display = totalVoted >= totalVoters ? "block" : "none";
     }
 
     function atualizarLogVotos() {
-        const logList = document.getElementById('voteLogList');
-        logList.innerHTML = "";
-        for (let owner in votes) {
-            votes[owner].forEach(voter => {
-                const li = document.createElement('li');
-                
-                const spanTexto = document.createElement('span');
-                spanTexto.textContent = `${voter} ➔ ${owner}`;
-                li.appendChild(spanTexto);
+        const log = document.getElementById('voteLogList'); log.innerHTML = "";
+        for (let o in votes) votes[o].forEach(v => log.innerHTML += `<li>${v} ➔ ${o} <button class="edit-btn" onclick="corrigirVoto('${v}','${o}')">✏️</button></li>`);
+    }
 
-                const editBtn = document.createElement('button');
-                editBtn.innerHTML = '✏️'; 
-                editBtn.className = 'edit-btn';
-                editBtn.onclick = () => corrigirVoto(voter, owner);
-                
-                li.appendChild(editBtn);
-                logList.appendChild(li);
-            });
-        }
+    function corrigirVoto(v, o) {
+        votes[o] = votes[o].filter(x => x !== v);
+        atualizarLogVotos(); verificarEstadoVotacao();
     }
 
     function finalizarRodada() {
-        const totalVoters = playerNames.length - 1;
-        const storytellerVotes = votes[storyteller] ? votes[storyteller] : [];
-        const storytellerVotesCount = storytellerVotes.length;
-        
-        if (storytellerVotesCount === 0 || storytellerVotesCount === totalVoters) {
-            playerNames.forEach(name => {
-                if (name !== storyteller) {
-                    players[name] += 2;
-                }
-            });
-        } 
-        else {
-            players[storyteller] += (3 + storytellerVotesCount);
-            storytellerVotes.forEach(voter => {
-                players[voter] += 3;
-            });
-        }
-
-        for (let cardOwner in votes) {
-            if (cardOwner !== storyteller) {
-                players[cardOwner] += votes[cardOwner].length;
-            }
-        }
-        
-        let maxScore = 0;
-        playerNames.forEach(name => {
-            if (players[name] > maxScore) maxScore = players[name];
-        });
-
-        if (maxScore >= winningScoreTarget) {
-            mostrarVencedor(); 
+        const sVotes = votes[storyteller] ? votes[storyteller].length : 0;
+        if (sVotes === 0 || sVotes === playerNames.length - 1) {
+            playerNames.forEach(n => { if (n !== storyteller) players[n] += 2; });
         } else {
-            mostrarPlacarRodada(); 
+            players[storyteller] += (3 + sVotes);
+            votes[storyteller]?.forEach(v => players[v] += 3);
         }
+        for (let o in votes) if (o !== storyteller) players[o] += votes[o].length;
+        
+        let max = Math.max(...Object.values(players));
+        max >= winningScoreTarget ? mostrarVencedor() : mostrarPlacar();
     }
 
-    function mostrarPlacarRodada() {
+    function mostrarPlacar() {
         esconderTodasTelas();
-        
-        const resultsList = document.getElementById('currentScoresList');
-        resultsList.innerHTML = "";
-        
-        let sortedPlayers = [...playerNames].sort((a, b) => players[b] - players[a]);
-
-        sortedPlayers.forEach(name => {
-            const li = document.createElement('li');
-            li.innerHTML = `<span>${name}</span> <strong>${players[name]} pts</strong>`;
-            resultsList.appendChild(li);
-        });
-
+        const list = document.getElementById('currentScoresList'); list.innerHTML = "";
+        Object.entries(players).sort((a,b) => b[1]-a[1]).forEach(([n, s]) => list.innerHTML += `<li>${n} <strong>${s} pts</strong></li>`);
         document.getElementById('roundResultsCard').style.display = "block";
     }
 
     function proximaRodada() {
-        roundNumber++;
-        storytellerIndex = (storytellerIndex + 1) % playOrder.length;
-        mostrarTelaNarrador();
-    }
-
-    // SINTETIZADOR DE SOM NATIVO E CONFETES
-    function tocarSomDeFesta() {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        
-        const ctx = new AudioContext();
-        const now = ctx.currentTime;
-        
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        
-        osc.type = 'sawtooth';
-        
-        osc.frequency.setValueAtTime(600, now);
-        osc.frequency.exponentialRampToValueAtTime(300, now + 0.5);
-        
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.3, now + 0.05); 
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5); 
-        
-        osc.start(now);
-        osc.stop(now + 0.5);
-    }
-
-    function dispararConfeteESom() {
-        tocarSomDeFesta();
-        
-        if (typeof confetti === "function") {
-            var duration = 3 * 1000;
-            var animationEnd = Date.now() + duration;
-            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-            var interval = setInterval(function() {
-                var timeLeft = animationEnd - Date.now();
-
-                if (timeLeft <= 0) {
-                    return clearInterval(interval);
-                }
-
-                var particleCount = 50 * (timeLeft / duration);
-                confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } }));
-            }, 250);
-        }
+        roundNumber++; storytellerIndex = (storytellerIndex + 1) % playOrder.length; mostrarTelaNarrador();
     }
 
     function mostrarVencedor() {
         esconderTodasTelas();
-        
-        let sortedPlayers = [...playerNames].sort((a, b) => players[b] - players[a]);
-        let winnerScore = players[sortedPlayers[0]];
-        let winners = sortedPlayers.filter(name => players[name] === winnerScore);
-        
-        const winnerDisplay = document.getElementById('winnerDisplay');
-        
-        let htmlConteudo = `<div class="trophy-icon">🏆</div>`;
-        
-        if (winners.length > 1) {
-            htmlConteudo += `<div style="font-size: 16px;">EMPATE!</div><div id="winnerText">${winners.join(" E ")}</div>`;
-        } else {
-            htmlConteudo += `<div id="winnerText">${winners[0]} VENCEU!</div>`;
-        }
-        
-        winnerDisplay.innerHTML = htmlConteudo;
-
-        const finalResultsList = document.getElementById('finalScoresList');
-        finalResultsList.innerHTML = "";
-        sortedPlayers.forEach(name => {
-            const li = document.createElement('li');
-            li.innerHTML = `<span>${name}</span> <strong>${players[name]} pts</strong>`;
-            finalResultsList.appendChild(li);
-        });
-
+        const sorted = Object.entries(players).sort((a,b) => b[1]-a[1]);
+        const winner = sorted[0][0];
+        document.getElementById('winnerDisplay').innerHTML = `<div class="trophy-icon">🏆</div><div id="winnerText">${winner} VENCEU!</div>`;
+        const list = document.getElementById('finalScoresList'); list.innerHTML = "";
+        sorted.forEach(([n, s]) => list.innerHTML += `<li>${n} <strong>${s} pts</strong></li>`);
         document.getElementById('finalResultsCard').style.display = "block";
-        
-        // Ajusta a fonte do vencedor
-        setTimeout(() => ajustarFonteParaCaber('winnerText', 32), 50);
-        
-        dispararConfeteESom();
+        if(typeof confetti === "function") {
+            new AudioContext().createOscillator().start(); // Permissão de áudio
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        }
+        setTimeout(() => ajustarNome('winnerText'), 50);
+    }
+
+    function esconderTodasTelas() {
+        ['registrationCard', 'roundIntroCard', 'votingCard', 'roundResultsCard', 'finalResultsCard'].forEach(id => document.getElementById(id).style.display = "none");
+    }
+
+    function iniciarVoz() {
+        const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        rec.lang = 'pt-BR';
+        rec.onresult = (e) => { document.getElementById('playerName').value = e.results[0][0].transcript.toUpperCase(); adicionarJogador(); };
+        rec.start();
     }
 </script>
-
 </body>
 </html>
