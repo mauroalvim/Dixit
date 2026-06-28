@@ -410,7 +410,7 @@
 
 <header class="app-header">
     <h1>Dixit <span>Score</span> 🎲</h1>
-    <span class="version-tag">v8.1</span>
+    <span class="version-tag">v8.5</span>
 </header>
 
 <!-- TELA 1: CADASTRO -->
@@ -528,22 +528,30 @@
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
         recognition.lang = 'pt-BR';
-        recognition.interimResults = false;
+        recognition.interimResults = true;
+        recognition.continuous = false;
         recognition.maxAlternatives = 1;
         recognition.onstart = () => {
             document.getElementById('voiceBtn').textContent = "🎤 Ouvindo...";
             document.getElementById('voiceBtn').style.opacity = "0.8";
         };
         recognition.onresult = (event) => {
-            let text = event.results[0][0].transcript.replace(/[.?!]/g, "").trim().toUpperCase();
+            // Pega o resultado mais recente (interim ou final) e já aplica
+            const result = event.results[event.results.length - 1];
+            let text = result[0].transcript.replace(/[.?!]/g, "").trim().toUpperCase();
             if (text) {
                 document.getElementById('playerName').value = text;
-                adicionarJogador();
+                // Para imediatamente ao detectar fala, sem esperar silêncio
+                recognition.stop();
             }
         };
         recognition.onend = () => {
             document.getElementById('voiceBtn').textContent = "🎤 Falar";
             document.getElementById('voiceBtn').style.opacity = "1";
+            // Adiciona com o texto que ficou no campo (já capturado no onresult)
+            if (document.getElementById('playerName').value.trim()) {
+                adicionarJogador();
+            }
         };
         recognition.start();
     }
@@ -726,18 +734,22 @@
         const totalVoters = playerNames.length - 1;
         const storytellerVotes = votes[storyteller] || [];
         const svCount = storytellerVotes.length;
-        // Regra: +1 ponto por cada voto recebido na carta
-        // Narrador ganha +3 bônus SE recebeu votos, mas não todos
+
+        // +1 por cada voto recebido na carta (todos os jogadores)
         for (let owner in votes) {
             players[owner] += votes[owner].length;
         }
-        // Bônus do narrador: só se não foi punição (0 votos ou todos)
+
+        // Bônus do narrador: +3 se recebeu votos, mas não todos (não punição)
         if (svCount > 0 && svCount < totalVoters) {
             players[storyteller] += 3;
+            // +2 para quem acertou a carta do narrador
+            storytellerVotes.forEach(voter => { players[voter] += 2; });
         } else {
-            // Punição: narrador não ganha o bônus, tira os pontos de carta que ganharia
+            // Punição: narrador não ganha o bônus, remove os pontos de carta que ganhou
             players[storyteller] -= svCount;
         }
+
         let maxScore = 0;
         playerNames.forEach(name => { if (players[name] > maxScore) maxScore = players[name]; });
         if (maxScore >= winningScoreTarget) mostrarVencedor();
