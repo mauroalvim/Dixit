@@ -410,7 +410,7 @@
 
 <header class="app-header">
     <h1>Dixit <span>Score</span> 🎲</h1>
-    <span class="version-tag">v8.5</span>
+    <span class="version-tag">v9</span>
 </header>
 
 <!-- TELA 1: CADASTRO -->
@@ -740,14 +740,19 @@
             players[owner] += votes[owner].length;
         }
 
-        // Bônus do narrador: +3 se recebeu votos, mas não todos (não punição)
         if (svCount > 0 && svCount < totalVoters) {
+            // Caso normal: narrador ganha +3 bônus
             players[storyteller] += 3;
-            // +2 para quem acertou a carta do narrador
+            // Quem acertou a carta do narrador ganha +2
+            storytellerVotes.forEach(voter => { players[voter] += 2; });
+        } else if (svCount === totalVoters) {
+            // Punição (todos votaram no narrador):
+            // Narrador não ganha nada — remove o +1 de carta que ganhou
+            players[storyteller] -= svCount;
+            // Mas quem acertou ainda ganha +2
             storytellerVotes.forEach(voter => { players[voter] += 2; });
         } else {
-            // Punição: narrador não ganha o bônus, remove os pontos de carta que ganhou
-            players[storyteller] -= svCount;
+            // Ninguém votou no narrador: narrador fica com 0 bônus, ninguém ganha +2
         }
 
         let maxScore = 0;
